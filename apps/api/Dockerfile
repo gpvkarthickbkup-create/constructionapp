@@ -14,4 +14,4 @@ COPY . .
 
 EXPOSE 4000
 
-CMD ["npx", "tsx", "src/server.ts"]
+CMD sh -c "npx prisma db push --skip-generate && npx tsx src/server.ts"
