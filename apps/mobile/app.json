@@ -3,6 +3,7 @@
     "name": "Datalytics Construction",
     "slug": "datalytics-construction",
     "version": "1.0.0",
+    "runtimeVersion": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -22,6 +23,9 @@
         "backgroundColor": "#f26f31"
       },
       "package": "com.datalytics.construction"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/de8864db-5c1d-4192-ae25-042a77862d78"
     },
     "plugins": [
       "expo-asset",
