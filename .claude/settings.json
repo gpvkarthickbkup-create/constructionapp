@@ -81,7 +81,8 @@
       "Bash(eas --version)",
       "Bash(eas build:*)",
       "Bash(eas whoami:*)",
-      "Bash(curl -s \"https://expo.dev/accounts/gpvkarthick/projects/datalytics-construction/builds/7ff435fa-187c-4ee9-a438-0a289d615fe9\")"
+      "Bash(curl -s \"https://expo.dev/accounts/gpvkarthick/projects/datalytics-construction/builds/7ff435fa-187c-4ee9-a438-0a289d615fe9\")",
+      "Bash(mkdir -p \"C:/Users/gpvka/Desktop/Palanivel Personal/Datalytics/Construction Software/apps/mobile/assets\")"
     ]
   }
 }
