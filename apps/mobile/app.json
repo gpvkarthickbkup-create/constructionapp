@@ -26,6 +26,12 @@
       "expo-asset",
       "expo-font",
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "de8864db-5c1d-4192-ae25-042a77862d78"
+      }
+    },
+    "owner": "gpvkarthick"
   }
 }
