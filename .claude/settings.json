@@ -68,7 +68,10 @@
       "Bash(ls screens/*.tsx helpers.ts App.tsx)",
       "Bash(node -e 'const l=require\\('\\\\''fs'\\\\''\\).readFileSync\\('\\\\''__TRACKED_VAR__'\\\\'','\\\\''utf8'\\\\''\\).split\\('\\\\''\\\\n'\\\\''\\);let d=0;l.forEach\\(x=>d+=\\(x.match\\(/{/g\\)||[]\\).length-\\(x.match\\(/}/g\\)||[]\\).length\\);process.stdout.write\\(String\\(d\\)\\)')",
       "Read(//c/Users/gpvka/Desktop/Palanivel Personal/Datalytics/Construction Software/apps/web/src/pages/sites/**)",
-      "Bash(git ls-remote:*)"
+      "Bash(git ls-remote:*)",
+      "Bash(curl -s https://datalytics-easy-build.onrender.com/api/health)",
+      "Bash(curl -s -X POST https://datalytics-easy-build.onrender.com/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"Gpvk@datalytics.com\",\"password\":\"Datalytics@123\"}')",
+      "Bash(curl -s -X POST https://datalytics-easy-build.onrender.com/api/auth/register -H \"Content-Type: application/json\" -d '{\"companyName\":\"AS Builders\",\"ownerName\":\"Karthick\",\"email\":\"gpvk@datalytics.com\",\"mobile\":\"9876543210\",\"password\":\"Datalytics@123\"}')"
     ]
   }
 }

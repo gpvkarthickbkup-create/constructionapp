@@ -1,12 +1,12 @@
-// BuildWise - Construction Project Cost Tracking SaaS
-// Database: SQLite (migration-ready for PostgreSQL)
+// Datalytics Construction Software
+// Database: PostgreSQL (Production)
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
