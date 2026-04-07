@@ -1,7 +1,12 @@
 import axios from 'axios';
 
+// In production, use the full API URL. In dev, use proxy via /api
+const API_URL = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : '/api';
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_URL,
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -26,7 +31,7 @@ api.interceptors.response.use(
 
       if (refreshToken) {
         try {
-          const { data } = await axios.post('/api/auth/refresh-token', { refreshToken });
+          const { data } = await axios.post(`${API_URL}/auth/refresh-token`, { refreshToken });
           localStorage.setItem('buildwise_token', data.data.accessToken);
           localStorage.setItem('buildwise_refresh_token', data.data.refreshToken);
           originalRequest.headers.Authorization = `Bearer ${data.data.accessToken}`;
