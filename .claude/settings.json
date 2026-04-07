@@ -67,7 +67,8 @@
       "Bash(echo \"=== COMPLETE WEB FEATURE INVENTORY ===\" echo \"\" echo \"--- PAGES ---\" ls \"/c/Users/gpvka/Desktop/Palanivel Personal/Datalytics/Construction Software/apps/web/src/pages/\"*/*.tsx)",
       "Bash(ls screens/*.tsx helpers.ts App.tsx)",
       "Bash(node -e 'const l=require\\('\\\\''fs'\\\\''\\).readFileSync\\('\\\\''__TRACKED_VAR__'\\\\'','\\\\''utf8'\\\\''\\).split\\('\\\\''\\\\n'\\\\''\\);let d=0;l.forEach\\(x=>d+=\\(x.match\\(/{/g\\)||[]\\).length-\\(x.match\\(/}/g\\)||[]\\).length\\);process.stdout.write\\(String\\(d\\)\\)')",
-      "Read(//c/Users/gpvka/Desktop/Palanivel Personal/Datalytics/Construction Software/apps/web/src/pages/sites/**)"
+      "Read(//c/Users/gpvka/Desktop/Palanivel Personal/Datalytics/Construction Software/apps/web/src/pages/sites/**)",
+      "Bash(git ls-remote:*)"
     ]
   }
 }

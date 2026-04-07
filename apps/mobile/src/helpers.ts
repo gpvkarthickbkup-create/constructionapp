@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 
-export const API_HOST = Platform.OS === 'web' ? 'http://localhost:4000' : 'http://192.168.1.5:4000';
+export const API_HOST = 'https://datalytics-easy-build.onrender.com';
 
 export function fmt(n: number): string {
   if (n == null || isNaN(n)) return '\u20B90';
