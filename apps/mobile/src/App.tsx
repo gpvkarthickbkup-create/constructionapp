@@ -39,18 +39,18 @@ function MainApp({ dark, toggleDark, lang, toggleLang }: { dark: boolean; toggle
     setScreenParams({});
   };
 
-  // Android back button
+  // Android back button — only handle on detail screens
   useEffect(() => {
     if (Platform.OS !== 'android') return;
     const handler = () => {
       if (screen) { goBack(); return true; }
       if (moreView) { setMoreView(null); return true; }
-      if (tab !== 'home') { setTab('home'); return true; }
+      // Don't capture back on main tabs — let system handle (exit app)
       return false;
     };
     const sub = BackHandler.addEventListener('hardwareBackPress', handler);
     return () => sub.remove();
-  }, [screen, tab, moreView]);
+  }, [screen, moreView]);
 
   const renderScreen = () => {
     if (screen === 'siteDetail') return <SiteDetailScreen siteId={screenParams.siteId} back={goBack} nav={nav} dark={dark} />;
