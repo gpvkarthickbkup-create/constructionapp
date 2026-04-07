@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env
+*.db
+*.db-journal
+uploads/
+.DS_Store
+.vscode/
+*.log
+.expo/
+.env
+*.db
+*.db-journal
+uploads/

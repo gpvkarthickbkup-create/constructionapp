@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "Datalytics Construction",
+    "slug": "datalytics-construction",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#f26f31"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.datalytics.construction"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#f26f31"
+      },
+      "package": "com.datalytics.construction"
+    },
+    "plugins": [
+      "expo-asset",
+      "expo-font",
+      "expo-secure-store"
+    ]
+  }
+}

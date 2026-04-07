@@ -1,0 +1,724 @@
+// BuildWise - Construction Project Cost Tracking SaaS
+// Database: SQLite (migration-ready for PostgreSQL)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// PLATFORM & TENANT MODELS
+// ============================================================
+
+model Tenant {
+  id            String   @id @default(uuid())
+  companyName   String
+  ownerName     String
+  mobile        String
+  email         String   @unique
+  address       String?
+  logo          String?
+  gstNumber     String?
+  currency      String   @default("INR")
+  language      String   @default("en")
+  dateFormat    String   @default("DD/MM/YYYY")
+  decimalPlaces Int      @default(2)
+  status        String   @default("trial") // trial | active | expired | suspended
+  lockedModules String   @default("") // comma-separated: "land,reports,customers" — modules disabled by super admin
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+
+  subscription  Subscription?
+  users         User[]
+  sites         Site[]
+  vendors       Vendor[]
+  expenseCategories ExpenseCategory[]
+  expenses      Expense[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+  activityLogs  ActivityLog[]
+  appSettings   AppSetting[]
+  roles         Role[]
+  customers     Customer[]
+  bankAccounts  BankAccount[]
+  lands         Land[]
+
+  @@index([status])
+  @@index([email])
+}
+
+model SubscriptionPlan {
+  id             String   @id @default(uuid())
+  name           String   // free_trial | basic | standard | premium | enterprise
+  displayName    String
+  displayNameTa  String?
+  price          Float
+  billingCycle   String   @default("monthly") // monthly | yearly
+  maxUsers       Int      @default(5)
+  maxSites       Int      @default(10)
+  maxStorageMB   Int      @default(500)
+  features       String   @default("{}") // JSON string of feature flags
+  isActive       Boolean  @default(true)
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  subscriptions  Subscription[]
+}
+
+model Subscription {
+  id              String   @id @default(uuid())
+  tenantId        String   @unique
+  planId          String
+  trialStartDate  DateTime?
+  trialEndDate    DateTime?
+  startDate       DateTime?
+  endDate         DateTime?
+  gracePeriodDays Int      @default(7)
+  status          String   @default("trial") // trial | active | expired | cancelled | suspended
+  paymentRef      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tenant          Tenant           @relation(fields: [tenantId], references: [id])
+  plan            SubscriptionPlan @relation(fields: [planId], references: [id])
+
+  @@index([status])
+  @@index([endDate])
+}
+
+// ============================================================
+// USER & ROLE MODELS
+// ============================================================
+
+model User {
+  id            String   @id @default(uuid())
+  tenantId      String?  // null for super admin
+  email         String   @unique
+  mobile        String?
+  passwordHash  String
+  firstName     String
+  lastName      String?
+  avatar        String?
+  language      String   @default("en")
+  isSuperAdmin  Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  lastLoginAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  deletedAt     DateTime?
+
+  tenant        Tenant?          @relation(fields: [tenantId], references: [id])
+  userRoles     UserRoleMap[]
+  siteAssignments SiteAssignment[]
+  createdExpenses Expense[]      @relation("ExpenseCreator")
+  updatedExpenses Expense[]      @relation("ExpenseUpdater")
+  auditLogs     AuditLog[]
+  activityLogs  ActivityLog[]
+  refreshTokens RefreshToken[]
+
+  @@index([tenantId])
+  @@index([email])
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  tenantId    String?  // null for system roles
+  name        String   // company_admin | accountant | site_manager | site_engineer | data_entry | viewer
+  displayName String
+  displayNameTa String?
+  description String?
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant?          @relation(fields: [tenantId], references: [id])
+  permissions RolePermission[]
+  userRoles   UserRoleMap[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  module      String   // sites | expenses | vendors | reports | users | settings
+  action      String   // create | read | update | delete | export | approve
+  description String?
+  createdAt   DateTime @default(now())
+
+  rolePermissions RolePermission[]
+
+  @@unique([module, action])
+}
+
+model RolePermission {
+  id           String @id @default(uuid())
+  roleId       String
+  permissionId String
+
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+}
+
+model UserRoleMap {
+  id     String @id @default(uuid())
+  userId String
+  roleId String
+
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// ============================================================
+// SITE / PROJECT MODELS
+// ============================================================
+
+model Site {
+  id                   String   @id @default(uuid())
+  tenantId             String
+  siteCode             String
+  siteName             String
+  clientName           String?
+  clientMobile         String?
+  address              String?
+  latitude             Float?
+  longitude            Float?
+  projectType          String   @default("house") // house | villa | apartment | commercial | renovation | interior | other
+  startDate            DateTime?
+  expectedEndDate      DateTime?
+  actualEndDate        DateTime?
+  totalSqft              Float    @default(0)
+  customerRatePerSqft    Float    @default(0)
+  builderRatePerSqft     Float    @default(0)
+  customerEstimate       Float    @default(0)  // totalSqft × customerRate = what we quote customer
+  builderEstimate        Float    @default(0)  // totalSqft × builderRate = what it costs us
+  saleAmount             Float    @default(0)  // final agreed amount with customer
+  estimatedProfit        Float    @default(0)  // customerEstimate - builderEstimate
+  estimatedBudget        Float    @default(0)  // kept for backward compat = builderEstimate
+  estimatedMaterialCost  Float    @default(0)
+  estimatedLaborCost     Float    @default(0)
+  estimatedOtherCost     Float    @default(0)
+  status               String   @default("planning") // planning | active | on_hold | completed | cancelled
+  assignedManagerId    String?
+  coverImage           String?
+  notes                String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  deletedAt            DateTime?
+
+  tenant               Tenant           @relation(fields: [tenantId], references: [id])
+  expenses             Expense[]
+  siteImages           SiteImage[]
+  siteAssignments      SiteAssignment[]
+
+  @@unique([tenantId, siteCode])
+  @@index([tenantId])
+  @@index([status])
+  @@index([tenantId, status])
+}
+
+model SiteImage {
+  id        String   @id @default(uuid())
+  siteId    String
+  imageUrl  String
+  caption   String?
+  imageType String   @default("general") // cover | layout | progress | general
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([siteId])
+}
+
+model SiteAssignment {
+  id     String @id @default(uuid())
+  siteId String
+  userId String
+
+  site   Site @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([siteId, userId])
+}
+
+// ============================================================
+// VENDOR / SUPPLIER MODELS
+// ============================================================
+
+model Vendor {
+  id        String   @id @default(uuid())
+  tenantId  String
+  vendorCode String
+  name      String
+  type      String   @default("supplier") // supplier | labor_contractor | engineer | broker | transporter | other
+  mobile    String?
+  email     String?
+  address   String?
+  gstNumber String?
+  notes     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  expenses  Expense[]
+
+  @@unique([tenantId, vendorCode])
+  @@index([tenantId])
+  @@index([tenantId, type])
+}
+
+// ============================================================
+// EXPENSE MODELS
+// ============================================================
+
+model ExpenseCategory {
+  id            String   @id @default(uuid())
+  tenantId      String?  // null for system defaults
+  name          String
+  nameTa        String?
+  type          String   @default("material") // material | labor | commission | transport | rental | miscellaneous
+  icon          String?
+  color         String?
+  isSystem      Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tenant        Tenant?              @relation(fields: [tenantId], references: [id])
+  subcategories ExpenseSubcategory[]
+  expenses      Expense[]
+
+  @@index([tenantId])
+  @@index([type])
+}
+
+model ExpenseSubcategory {
+  id         String   @id @default(uuid())
+  categoryId String
+  name       String
+  nameTa     String?
+  isActive   Boolean  @default(true)
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  category   ExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  expenses   Expense[]
+
+  @@index([categoryId])
+}
+
+model Expense {
+  id              String   @id @default(uuid())
+  tenantId        String
+  siteId          String
+  vendorId        String?
+  expenseNumber   String
+  expenseDate     DateTime
+  expenseType     String   // material | labor | commission | transport | rental | miscellaneous
+  categoryId      String?
+  subcategoryId   String?
+  itemName        String
+  description     String?
+  quantity         Float    @default(1)
+  unit            String?  // kg | bag | cft | sqft | nos | trip | day | hr | lot | lump
+  rate            Float    @default(0)
+  totalAmount     Float
+  gstPercent      Float    @default(0)
+  gstAmount       Float    @default(0)
+  grandTotal      Float    @default(0)
+  paymentStatus   String   @default("unpaid") // paid | partially_paid | unpaid
+  paidAmount      Float    @default(0)
+  dueAmount       Float    @default(0)
+  paymentType     String?  // cash | upi | bank | credit | cheque
+  billNumber      String?
+  referenceNumber String?
+  dueDate         DateTime?
+  attachmentCount Int      @default(0)
+  remarks         String?
+  approvalStatus  String   @default("approved") // pending | approved | rejected
+  isDraft         Boolean  @default(false)
+  createdBy       String
+  updatedBy       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+
+  tenant          Tenant              @relation(fields: [tenantId], references: [id])
+  site            Site                @relation(fields: [siteId], references: [id])
+  vendor          Vendor?             @relation(fields: [vendorId], references: [id])
+  category        ExpenseCategory?    @relation(fields: [categoryId], references: [id])
+  subcategory     ExpenseSubcategory? @relation(fields: [subcategoryId], references: [id])
+  creator         User                @relation("ExpenseCreator", fields: [createdBy], references: [id])
+  updater         User?               @relation("ExpenseUpdater", fields: [updatedBy], references: [id])
+  attachments     ExpenseAttachment[]
+  payments        Payment[]
+
+  @@unique([tenantId, expenseNumber])
+  @@index([tenantId])
+  @@index([siteId])
+  @@index([vendorId])
+  @@index([expenseDate])
+  @@index([tenantId, siteId])
+  @@index([tenantId, expenseDate])
+  @@index([tenantId, paymentStatus])
+  @@index([tenantId, expenseType])
+  @@index([billNumber])
+}
+
+model ExpenseAttachment {
+  id         String   @id @default(uuid())
+  expenseId  String
+  fileUrl    String
+  fileName   String
+  fileType   String   // image | pdf | document
+  fileSize   Int      @default(0)
+  caption    String?
+  createdAt  DateTime @default(now())
+
+  expense    Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+
+  @@index([expenseId])
+}
+
+model Payment {
+  id          String   @id @default(uuid())
+  expenseId   String
+  amount      Float
+  paymentDate DateTime
+  paymentType String   // cash | upi | bank | credit | cheque
+  reference   String?
+  notes       String?
+  createdBy   String
+  createdAt   DateTime @default(now())
+
+  expense     Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+
+  @@index([expenseId])
+}
+
+// ============================================================
+// NOTIFICATION & AUDIT MODELS
+// ============================================================
+
+model Notification {
+  id        String   @id @default(uuid())
+  tenantId  String
+  userId    String?
+  type      String   // subscription_expiry | payment_reminder | budget_overrun | no_activity | daily_summary | weekly_summary
+  title     String
+  titleTa   String?
+  message   String
+  messageTa String?
+  data      String?  // JSON string
+  isRead    Boolean  @default(false)
+  channel   String   @default("in_app") // in_app | email | push | whatsapp
+  createdAt DateTime @default(now())
+
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, userId])
+  @@index([tenantId, isRead])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  tenantId   String
+  userId     String
+  action     String   // create | update | delete | login | logout
+  entity     String   // expense | site | vendor | user | setting
+  entityId   String?
+  oldValue   String?  // JSON string
+  newValue   String?  // JSON string
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, entity])
+  @@index([tenantId, userId])
+  @@index([createdAt])
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  tenantId  String
+  userId    String
+  action    String
+  message   String
+  messageTa String?
+  entityType String?
+  entityId   String?
+  createdAt DateTime @default(now())
+
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, createdAt])
+}
+
+// ============================================================
+// LAND PROMOTION MODELS
+// ============================================================
+
+model Land {
+  id              String   @id @default(uuid())
+  tenantId        String
+  landCode        String
+  landName        String
+  totalArea       Float    @default(0)  // in sqft
+  areaUnit        String   @default("sqft") // sqft | acres | cents | grounds
+  city            String?
+  district        String?
+  state           String   @default("Tamil Nadu")
+  surveyNumber    String?
+  address         String?
+  latitude        Float?
+  longitude       Float?
+  purchaseDate    DateTime?
+  purchaseCost    Float    @default(0)     // what we paid for the land
+  totalSaleValue  Float    @default(0)     // sum of all plot sale prices (auto-calculated)
+  developmentCostTotal Float @default(0)   // sum of all dev costs (auto-calculated)
+  totalInvestment Float    @default(0)     // purchaseCost + developmentCostTotal
+  totalCollected  Float    @default(0)     // sum of all plot payments received
+  profit          Float    @default(0)     // totalCollected - totalInvestment
+  currentValue    Float    @default(0)
+  ownershipType   String   @default("self_owned") // self_owned | partnership | leased
+  dtcpApproval    String?  // approval number
+  dtcpStatus      String   @default("pending") // pending | approved | rejected | not_required
+  status          String   @default("acquired") // acquired | developing | developed | selling | sold_out
+  totalPlots      Int      @default(0)
+  soldPlots       Int      @default(0)
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+
+  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+  plots           Plot[]
+  approvals       LandApproval[]
+  developmentCosts LandDevelopmentCost[]
+
+  @@unique([tenantId, landCode])
+  @@index([tenantId])
+}
+
+model Plot {
+  id              String   @id @default(uuid())
+  tenantId        String
+  landId          String
+  plotNumber      String   // A1, A2, B1 etc
+  area            Float    @default(0) // sqft
+  length          Float?
+  width           Float?
+  facing          String?  // north | south | east | west | corner
+  ratePerSqft     Float    @default(0)
+  totalPrice      Float    @default(0) // area × rate
+  salePrice       Float    @default(0) // negotiated price
+  status          String   @default("available") // available | booked | sold | cancelled | reserved
+  customerId      String?
+  customerName    String?
+  customerMobile  String?
+  bookingDate     DateTime?
+  bookingAmount   Float    @default(0)
+  registrationDate DateTime?
+  registrationCost Float   @default(0)
+  brokerName      String?
+  brokerCommission Float   @default(0)
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  land            Land     @relation(fields: [landId], references: [id])
+  payments        PlotPayment[]
+
+  @@index([tenantId])
+  @@index([landId])
+}
+
+model PlotPayment {
+  id              String   @id @default(uuid())
+  plotId          String
+  amount          Float
+  paymentDate     DateTime
+  paymentType     String   // cash | upi | bank | cheque
+  installmentNo   Int      @default(1)
+  description     String?  // "Booking advance" | "1st installment" | "Registration"
+  reference       String?
+  receiptNumber   String?
+  createdAt       DateTime @default(now())
+
+  plot            Plot     @relation(fields: [plotId], references: [id])
+
+  @@index([plotId])
+}
+
+model LandApproval {
+  id              String   @id @default(uuid())
+  landId          String
+  approvalType    String   // dtcp | cmda | municipality | panchayat | environmental | noc
+  approvalNumber  String?
+  appliedDate     DateTime?
+  approvedDate    DateTime?
+  expiryDate      DateTime?
+  status          String   @default("pending") // pending | applied | approved | rejected | expired
+  documentUrl     String?
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  land            Land     @relation(fields: [landId], references: [id])
+
+  @@index([landId])
+}
+
+model LandDevelopmentCost {
+  id              String   @id @default(uuid())
+  landId          String
+  category        String   // road | drainage | electricity | water | survey | legal | marketing | brokerage | registration | fencing | landscaping | other
+  description     String?
+  amount          Float    @default(0)
+  date            DateTime?
+  vendorName      String?
+  paymentStatus   String   @default("paid") // paid | unpaid
+  createdAt       DateTime @default(now())
+
+  land            Land     @relation(fields: [landId], references: [id])
+
+  @@index([landId])
+}
+
+// ============================================================
+// BANK / CASH TRACKING MODELS
+// ============================================================
+
+model BankAccount {
+  id           String   @id @default(uuid())
+  tenantId     String
+  accountName  String
+  accountType  String   @default("bank") // bank | cash | upi
+  bankName     String?
+  accountNumber String?
+  ifscCode     String?
+  balance      Float    @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  transactions BankTransaction[]
+
+  @@index([tenantId])
+}
+
+model BankTransaction {
+  id            String   @id @default(uuid())
+  tenantId      String
+  accountId     String
+  type          String   // credit | debit
+  amount        Float
+  date          DateTime
+  description   String?
+  reference     String?
+  category      String?  // expense | collection | transfer | deposit | withdrawal
+  relatedId     String?  // expense_id or collection_id
+  balance       Float    @default(0)
+  createdBy     String
+  createdAt     DateTime @default(now())
+
+  account       BankAccount @relation(fields: [accountId], references: [id])
+
+  @@index([tenantId])
+  @@index([accountId])
+}
+
+// ============================================================
+// CUSTOMER / CLIENT MODELS
+// ============================================================
+
+model Customer {
+  id          String   @id @default(uuid())
+  tenantId    String
+  name        String
+  mobile      String?
+  email       String?
+  address     String?
+  gstNumber   String?
+  notes       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  collections CustomerCollection[]
+
+  @@index([tenantId])
+}
+
+model CustomerCollection {
+  id            String   @id @default(uuid())
+  tenantId      String
+  customerId    String
+  siteId        String?
+  amount        Float
+  collectionDate DateTime
+  paymentType   String   // cash | upi | bank | cheque
+  reference     String?
+  receiptNumber String?
+  notes         String?
+  createdBy     String
+  createdAt     DateTime @default(now())
+
+  customer      Customer @relation(fields: [customerId], references: [id])
+
+  @@index([tenantId])
+  @@index([customerId])
+}
+
+// ============================================================
+// SETTINGS MODELS
+// ============================================================
+
+model AppSetting {
+  id       String @id @default(uuid())
+  tenantId String
+  key      String
+  value    String
+
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, key])
+  @@index([tenantId])
+}
