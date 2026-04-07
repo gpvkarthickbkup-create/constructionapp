@@ -112,13 +112,7 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <p className="mt-6 text-center text-sm text-muted-foreground">
-              {t('auth.registerSubtitle')}
-              {' '}
-              <Link to="/register" className="font-medium text-primary hover:underline">
-                {t('auth.register')}
-              </Link>
-            </p>
+            {/* Register link hidden — admin creates accounts */}
           </CardContent>
         </Card>
       </div>

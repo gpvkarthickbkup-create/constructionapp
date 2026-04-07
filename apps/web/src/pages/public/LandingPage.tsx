@@ -96,11 +96,8 @@ export default function LandingPage() {
             </a>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => navigate('/login')}>
+            <Button size="sm" onClick={() => navigate('/login')}>
               {t('auth.login')}
-            </Button>
-            <Button size="sm" onClick={() => navigate('/register')}>
-              {t('landing.startFreeTrial')}
             </Button>
           </div>
         </div>
@@ -120,7 +117,7 @@ export default function LandingPage() {
             <Button
               size="lg"
               className="bg-white text-[#f26f31] hover:bg-orange-50 shadow-xl px-8"
-              onClick={() => navigate('/register')}
+              onClick={() => navigate('/login')}
             >
               {t('landing.startFreeTrial')}
               <ArrowRight className="ml-2 h-4 w-4" />
@@ -208,7 +205,7 @@ export default function LandingPage() {
                     className="mt-8 w-full"
                     variant={plan.popular ? 'default' : 'outline'}
                     size="lg"
-                    onClick={() => navigate('/register')}
+                    onClick={() => navigate('/login')}
                   >
                     {t('landing.startFreeTrial')}
                   </Button>
@@ -229,7 +226,7 @@ export default function LandingPage() {
           <Button
             size="lg"
             className="mt-8 bg-white text-[#f26f31] hover:bg-orange-50 px-8 shadow-xl"
-            onClick={() => navigate('/register')}
+            onClick={() => navigate('/login')}
           >
             {t('landing.startFreeTrial')}
             <ArrowRight className="ml-2 h-4 w-4" />

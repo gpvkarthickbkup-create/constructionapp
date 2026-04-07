@@ -72,7 +72,9 @@
       "Bash(curl -s https://datalytics-easy-build.onrender.com/api/health)",
       "Bash(curl -s -X POST https://datalytics-easy-build.onrender.com/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"Gpvk@datalytics.com\",\"password\":\"Datalytics@123\"}')",
       "Bash(curl -s -X POST https://datalytics-easy-build.onrender.com/api/auth/register -H \"Content-Type: application/json\" -d '{\"companyName\":\"AS Builders\",\"ownerName\":\"Karthick\",\"email\":\"gpvk@datalytics.com\",\"mobile\":\"9876543210\",\"password\":\"Datalytics@123\"}')",
-      "Bash(curl -s -X POST https://datalytics-easy-build.onrender.com/api/auth/register -H \"Content-Type: application/json\" -d '{\"companyName\":\"Datalytics Admin\",\"ownerName\":\"Super Admin\",\"email\":\"admin@datalytics.com\",\"mobile\":\"9999999999\",\"password\":\"Admin@123\"}')"
+      "Bash(curl -s -X POST https://datalytics-easy-build.onrender.com/api/auth/register -H \"Content-Type: application/json\" -d '{\"companyName\":\"Datalytics Admin\",\"ownerName\":\"Super Admin\",\"email\":\"admin@datalytics.com\",\"mobile\":\"9999999999\",\"password\":\"Admin@123\"}')",
+      "Bash(curl -s -X POST https://datalytics-easy-build.onrender.com/api/setup/make-admin -H \"Content-Type: application/json\" -d '{\"email\":\"admin@datalytics.com\",\"secret\":\"datalytics-setup-2026\"}')",
+      "Bash(curl -s -X POST https://datalytics-easy-build.onrender.com/api/setup/make-admin -H \"Content-Type: application/json\" -d '{\"email\":\"gpvk@datalytics.com\",\"secret\":\"datalytics-setup-2026\"}')"
     ]
   }
 }
