@@ -66,8 +66,9 @@ export default function App() {
       <Toaster position="top-right" richColors />
       <Routes>
         {/* Public */}
-        <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
+        <Route path="/" element={<PublicRoute><LoginPage /></PublicRoute>} />
         <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+        <Route path="/landing" element={<PublicRoute><LandingPage /></PublicRoute>} />
         <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
 
         {/* Protected App */}
