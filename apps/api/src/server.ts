@@ -71,6 +71,17 @@ app.get('/api/health', (_req, res) => {
   res.json({ success: true, message: 'Datalytics Construction API is running', version: '1.0.0' });
 });
 
+// One-time setup: make a user super admin (remove after use)
+app.post('/api/setup/make-admin', async (req, res) => {
+  try {
+    const { email, secret } = req.body;
+    if (secret !== 'datalytics-setup-2026') return res.status(403).json({ success: false, message: 'Invalid secret' });
+    const { default: prisma } = await import('./config/database');
+    const user = await prisma.user.update({ where: { email }, data: { isSuperAdmin: true } });
+    res.json({ success: true, message: `${email} is now super admin` });
+  } catch (e: any) { res.status(500).json({ success: false, message: e.message }); }
+});
+
 // Error handling
 app.use(notFoundHandler);
 app.use(errorHandler);
