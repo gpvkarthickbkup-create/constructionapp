@@ -18,6 +18,7 @@ import {
   UserCheck,
   Landmark,
   MapPin,
+  Shield,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 
@@ -45,7 +46,7 @@ interface SidebarProps {
 export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
   const location = useLocation();
   const { t, i18n } = useTranslation();
-  const { tenant, logout } = useAuthStore();
+  const { tenant, user, logout } = useAuthStore();
 
   const locked = (tenant?.lockedModules || '').split(',').filter(Boolean);
   const visibleMainNav = mainNavigation.filter(item => !locked.includes(item.key));
@@ -150,6 +151,21 @@ export function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
           </p>
         )}
         {visibleSecondaryNav.map(renderNavItem)}
+
+        {/* Super Admin Nav */}
+        {user?.isSuperAdmin && (
+          <>
+            <div className={cn('py-3', collapsed ? 'px-1' : 'px-3')}>
+              <div className="border-t border-gray-100 dark:border-gray-800" />
+            </div>
+            {!collapsed && (
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-300 px-3 mb-2">
+                Super Admin
+              </p>
+            )}
+            {renderNavItem({ key: 'admin', href: '/app/admin', icon: Shield })}
+          </>
+        )}
       </nav>
 
       {/* Bottom section */}

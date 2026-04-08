@@ -19,24 +19,28 @@ export class AuthService {
       throw new ConflictError('Company with this email already exists');
     }
 
-    // Get free trial plan
-    let trialPlan = await prisma.subscriptionPlan.findFirst({
-      where: { name: 'free_trial', isActive: true },
+    // Get Standard plan (paid) — fallback to any active plan
+    let plan = await prisma.subscriptionPlan.findFirst({
+      where: { name: 'standard', isActive: true },
     });
-
-    if (!trialPlan) {
-      // Create default trial plan if not exists
-      trialPlan = await prisma.subscriptionPlan.create({
+    if (!plan) {
+      plan = await prisma.subscriptionPlan.findFirst({
+        where: { isActive: true },
+        orderBy: { sortOrder: 'desc' },
+      });
+    }
+    if (!plan) {
+      plan = await prisma.subscriptionPlan.create({
         data: {
-          name: 'free_trial',
-          displayName: 'Free Trial',
-          displayNameTa: 'இலவச சோதனை',
-          price: 0,
-          maxUsers: 3,
-          maxSites: 5,
-          maxStorageMB: 200,
-          features: JSON.stringify({ reports: true, export: false, approval: false }),
-          sortOrder: 0,
+          name: 'standard',
+          displayName: 'Standard',
+          displayNameTa: 'நிலையான',
+          price: 2499,
+          maxUsers: 15,
+          maxSites: 50,
+          maxStorageMB: 5000,
+          features: JSON.stringify({ reports: true, export: true, approval: true }),
+          sortOrder: 2,
         },
       });
     }
@@ -65,7 +69,7 @@ export class AuthService {
       await tx.subscription.create({
         data: {
           tenantId: tenant.id,
-          planId: trialPlan!.id,
+          planId: plan!.id,
           startDate: new Date(),
           endDate: oneYearLater,
           status: 'active',

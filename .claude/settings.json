@@ -83,7 +83,9 @@
       "Bash(eas whoami:*)",
       "Bash(curl -s \"https://expo.dev/accounts/gpvkarthick/projects/datalytics-construction/builds/7ff435fa-187c-4ee9-a438-0a289d615fe9\")",
       "Bash(mkdir -p \"C:/Users/gpvka/Desktop/Palanivel Personal/Datalytics/Construction Software/apps/mobile/assets\")",
-      "Bash(curl -s -X POST https://datalytics-easy-build.onrender.com/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"gpvk@datalytics.com\",\"password\":\"Datalytics@123\"}')"
+      "Bash(curl -s -X POST https://datalytics-easy-build.onrender.com/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"gpvk@datalytics.com\",\"password\":\"Datalytics@123\"}')",
+      "Bash(curl -s https://datalytics-easy-build.onrender.com/api/admin/tenants/plans/all)",
+      "Bash(curl -s -X POST https://datalytics-easy-build.onrender.com/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"admin@datalytics.com\",\"password\":\"Admin@123\"}')"
     ]
   }
 }

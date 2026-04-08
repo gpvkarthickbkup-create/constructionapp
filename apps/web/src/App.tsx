@@ -28,6 +28,7 @@ import AddLandPage from '@/pages/land/AddLandPage';
 import NotificationsPage from '@/pages/notifications/NotificationsPage';
 import UsersPage from '@/pages/users/UsersPage';
 import SettingsPage from '@/pages/settings/SettingsPage';
+import AdminPage from '@/pages/admin/AdminPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -93,6 +94,7 @@ export default function App() {
           <Route path="notifications" element={<NotificationsPage />} />
           <Route path="users" element={<UsersPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="admin" element={<AdminPage />} />
         </Route>
 
         {/* Fallback */}
