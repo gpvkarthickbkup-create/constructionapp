@@ -82,7 +82,7 @@ function MainApp({ dark, toggleDark, lang, toggleLang }: { dark: boolean; toggle
   };
 
   const renderTab = () => {
-    if (tab === 'home') return <HomeScreen nav={nav} onSwitchTab={setTab} dark={dark} />;
+    if (tab === 'home') return <HomeScreen nav={nav} onSwitchTab={setTab} dark={dark} tenant={tenant} />;
     if (tab === 'sites') return <SitesScreen nav={nav} dark={dark} />;
     if (tab === 'history') return <ExpensesScreen dark={dark} />;
     if (tab === 'more') {
@@ -111,7 +111,7 @@ function MainApp({ dark, toggleDark, lang, toggleLang }: { dark: boolean; toggle
         </View>
       );
     }
-    return <HomeScreen nav={nav} onSwitchTab={setTab} dark={dark} />;
+    return <HomeScreen nav={nav} onSwitchTab={setTab} dark={dark} tenant={tenant} />;
   };
 
   const tabs = [

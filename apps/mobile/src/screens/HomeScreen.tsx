@@ -3,7 +3,7 @@ import { View, Text, ScrollView, RefreshControl, TouchableOpacity, ActivityIndic
 import { api } from '../api';
 import { fmt, C } from '../helpers';
 
-export function HomeScreen({ nav, onSwitchTab, dark }: { nav: (s: string, p?: any) => void; onSwitchTab: (t: string) => void; dark: boolean }) {
+export function HomeScreen({ nav, onSwitchTab, dark, tenant }: { nav: (s: string, p?: any) => void; onSwitchTab: (t: string) => void; dark: boolean; tenant?: any }) {
   const bg = dark ? C.bgDark : C.bg;
   const card = dark ? C.cardDark : C.card;
   const txt = dark ? C.textDark : C.text;
@@ -54,12 +54,13 @@ export function HomeScreen({ nav, onSwitchTab, dark }: { nav: (s: string, p?: an
     { label: 'Today', val: fmt(stats?.todaySpend ?? 0), icon: '📊' },
   ];
 
+  const locked = (tenant?.lockedModules || '').split(',').filter(Boolean);
   const actions = [
-    { label: '+ Expense', action: () => nav('addExpense') },
-    { label: 'Sites', action: () => onSwitchTab('sites') },
-    { label: 'Clients', action: () => onSwitchTab('more') },
-    { label: 'Lands', action: () => nav('lands') },
-  ];
+    { label: '+ Expense', action: () => nav('addExpense'), key: 'expenses' },
+    { label: 'Sites', action: () => onSwitchTab('sites'), key: 'sites' },
+    { label: 'Clients', action: () => onSwitchTab('more'), key: 'clients' },
+    { label: 'Lands', action: () => nav('lands'), key: 'lands' },
+  ].filter(a => !locked.includes(a.key));
 
   // Budget overrun alerts
   const overruns = activeSites.filter((s: any) => s.estimatedBudget > 0 && (s.totalSpent || 0) > s.estimatedBudget);

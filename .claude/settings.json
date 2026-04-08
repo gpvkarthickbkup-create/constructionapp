@@ -102,7 +102,8 @@
       "Read(//c/Users/gpvka/Downloads/**)",
       "Read(//c/Users/gpvka/AppData/Local/Temp/**)",
       "Bash(CI=1 eas update --channel production --message \"Logo + remove demo creds\" --platform android)",
-      "Bash(CI=1 eas update --channel production --message \"Fix tab bar above phone nav buttons\" --platform android)"
+      "Bash(CI=1 eas update --channel production --message \"Fix tab bar above phone nav buttons\" --platform android)",
+      "Bash(CI=1 eas update --channel production --message \"Module locking + searchable categories\" --platform android)"
     ]
   }
 }
