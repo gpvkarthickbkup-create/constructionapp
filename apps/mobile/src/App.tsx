@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Platform, Image, BackHandler } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, Platform, Image, BackHandler, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useAuthStore } from './store/authStore';
 import { LoginScreen } from './screens/LoginScreen';
@@ -39,18 +39,27 @@ function MainApp({ dark, toggleDark, lang, toggleLang }: { dark: boolean; toggle
     setScreenParams({});
   };
 
-  // Android back button — only handle on detail screens
+  // Android back button — smart navigation
+  const [backPressedOnce, setBackPressedOnce] = useState(false);
   useEffect(() => {
     if (Platform.OS !== 'android') return;
     const handler = () => {
+      // If on detail screen → go back to list
       if (screen) { goBack(); return true; }
+      // If on More sub-view → go back to More menu
       if (moreView) { setMoreView(null); return true; }
-      // Don't capture back on main tabs — let system handle (exit app)
-      return false;
+      // If not on home tab → go to home
+      if (tab !== 'home') { setTab('home'); return true; }
+      // On home tab → double tap to exit
+      if (backPressedOnce) return false; // exit app
+      setBackPressedOnce(true);
+      Alert.alert('', 'Press back again to exit');
+      setTimeout(() => setBackPressedOnce(false), 2000);
+      return true;
     };
     const sub = BackHandler.addEventListener('hardwareBackPress', handler);
     return () => sub.remove();
-  }, [screen, moreView]);
+  }, [screen, moreView, tab, backPressedOnce]);
 
   const renderScreen = () => {
     if (screen === 'siteDetail') return <SiteDetailScreen siteId={screenParams.siteId} back={goBack} nav={nav} dark={dark} />;
