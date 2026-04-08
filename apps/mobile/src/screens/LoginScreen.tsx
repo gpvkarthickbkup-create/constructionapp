@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { useAuthStore } from '../store/authStore';
 
 export function LoginScreen() {
@@ -26,11 +26,13 @@ export function LoginScreen() {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <View style={styles.card}>
-        <View style={styles.logoBox}>
-          <Text style={styles.logoIcon}>🏗️</Text>
-        </View>
+        <Image
+          source={{ uri: 'https://datalytics-easy-build.onrender.com/uploads/datalytics-logo.png' }}
+          style={{ width: 120, height: 60, alignSelf: 'center', marginBottom: 8, resizeMode: 'contain' }}
+          defaultSource={{ uri: '' }}
+        />
         <Text style={styles.logo}>Datalytics</Text>
-        <Text style={styles.subtitle}>Construction Cost Tracker</Text>
+        <Text style={styles.subtitle}>AI Global · Construction Software</Text>
 
         <TextInput
           style={styles.input}

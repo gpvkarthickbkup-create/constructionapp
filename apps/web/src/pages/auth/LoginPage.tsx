@@ -58,11 +58,9 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* Brand Header */}
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary shadow-lg">
-            <HardHat className="h-9 w-9 text-primary-foreground" />
-          </div>
+          <img src="/datalytics-logo.png" alt="Datalytics AI Global" className="mx-auto mb-4 h-20 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
           <h1 className="text-2xl font-bold tracking-tight">{t('common.appName')}</h1>
-          <p className="text-sm text-muted-foreground">{t('common.tagline')}</p>
+          <p className="text-sm text-muted-foreground">{t('common.poweredBy')}</p>
         </div>
 
         <Card className="shadow-xl">
