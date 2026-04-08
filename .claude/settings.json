@@ -100,7 +100,8 @@
       "Bash(curl -s -X POST https://datalytics-easy-build.onrender.com/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"locktest@test.com\",\"password\":\"Test@123\"}')",
       "Bash(ls \"/c/Users/gpvka/Desktop/Palanivel Personal/Datalytics/Construction Software/\"*.jpg \"/c/Users/gpvka/Desktop/Palanivel Personal/Datalytics/Construction Software/\"*.png)",
       "Read(//c/Users/gpvka/Downloads/**)",
-      "Read(//c/Users/gpvka/AppData/Local/Temp/**)"
+      "Read(//c/Users/gpvka/AppData/Local/Temp/**)",
+      "Bash(CI=1 eas update --channel production --message \"Logo + remove demo creds\" --platform android)"
     ]
   }
 }
