@@ -13,8 +13,7 @@ import { VendorsScreen } from './screens/VendorsScreen';
 import { VendorDetailScreen } from './screens/VendorDetailScreen';
 import { ClientsScreen } from './screens/ClientsScreen';
 import { ClientDetailScreen } from './screens/ClientDetailScreen';
-import { LandsScreen } from './screens/LandsScreen';
-import { LandDetailScreen } from './screens/LandDetailScreen';
+// Lands removed from mobile
 import { ReportsScreen } from './screens/ReportsScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { C, API_HOST } from './helpers';
@@ -67,15 +66,14 @@ function MainApp({ dark, toggleDark, lang, toggleLang }: { dark: boolean; toggle
     if (screen === 'addExpense') return <AddExpenseScreen preselectedSiteId={screenParams.preselectedSiteId} back={goBack} dark={dark} />;
     if (screen === 'vendorDetail') return <VendorDetailScreen vendorId={screenParams.vendorId} back={goBack} dark={dark} />;
     if (screen === 'clientDetail') return <ClientDetailScreen clientId={screenParams.clientId} back={goBack} dark={dark} />;
-    if (screen === 'landDetail') return <LandDetailScreen landId={screenParams.landId} back={goBack} dark={dark} />;
-    if (screen === 'lands') return <LandsScreen nav={nav} dark={dark} />;
+    // Lands removed from mobile
     return null;
   };
 
   const renderMoreView = () => {
     if (moreView === 'vendors') return <VendorsScreen nav={nav} dark={dark} />;
     if (moreView === 'clients') return <ClientsScreen nav={nav} dark={dark} />;
-    if (moreView === 'lands') return <LandsScreen nav={nav} dark={dark} />;
+    // Lands removed from mobile
     if (moreView === 'reports') return <ReportsScreen dark={dark} />;
     if (moreView === 'settings') return <SettingsScreen dark={dark} toggleDark={toggleDark} lang={lang} toggleLang={toggleLang} />;
     return null;
@@ -92,7 +90,6 @@ function MainApp({ dark, toggleDark, lang, toggleLang }: { dark: boolean; toggle
       const allItems = [
         { label: 'Vendors', icon: '🛠️', key: 'vendors' },
         { label: 'Clients', icon: '👥', key: 'clients' },
-        { label: 'Lands', icon: '🏘️', key: 'lands' },
         { label: 'Reports', icon: '📊', key: 'reports' },
         { label: 'Settings', icon: '⚙️', key: 'settings' },
       ];

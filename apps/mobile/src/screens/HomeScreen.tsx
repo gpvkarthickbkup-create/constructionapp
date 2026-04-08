@@ -59,7 +59,6 @@ export function HomeScreen({ nav, onSwitchTab, dark, tenant }: { nav: (s: string
     { label: '+ Expense', action: () => nav('addExpense'), key: 'expenses' },
     { label: 'Sites', action: () => onSwitchTab('sites'), key: 'sites' },
     { label: 'Clients', action: () => onSwitchTab('more'), key: 'clients' },
-    { label: 'Lands', action: () => nav('lands'), key: 'lands' },
   ].filter(a => !locked.includes(a.key));
 
   // Budget overrun alerts
