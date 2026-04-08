@@ -104,7 +104,12 @@
       "Bash(CI=1 eas update --channel production --message \"Logo + remove demo creds\" --platform android)",
       "Bash(CI=1 eas update --channel production --message \"Fix tab bar above phone nav buttons\" --platform android)",
       "Bash(CI=1 eas update --channel production --message \"Module locking + searchable categories\" --platform android)",
-      "Bash(CI=1 eas update --channel production --message \"Hide locked from quick actions\" --platform android)"
+      "Bash(CI=1 eas update --channel production --message \"Hide locked from quick actions\" --platform android)",
+      "Bash(sed -i 's/Datalytics Construction/Datalytics Easy Build/g' apps/web/src/locales/en.json)",
+      "Bash(sed -i 's/Datalytics Construction/Datalytics Easy Build/g' apps/mobile/src/App.tsx)",
+      "Bash(sed -i 's/Datalytics Construction/Datalytics Easy Build/g' apps/mobile/app.json)",
+      "Bash(sed -i 's/Datalytics Construction/Datalytics Easy Build/g' apps/web/index.html)",
+      "Bash(sed -i 's/Datalytics Construction/Datalytics Easy Build/g' apps/mobile/src/screens/LoginScreen.tsx)"
     ]
   }
 }

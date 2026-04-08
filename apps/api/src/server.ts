@@ -68,7 +68,7 @@ app.use('/api/lands', landRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {
-  res.json({ success: true, message: 'Datalytics Construction API is running', version: '1.0.0' });
+  res.json({ success: true, message: 'Datalytics Easy Build API is running', version: '1.0.0' });
 });
 
 // One-time setup: make a user super admin (remove after use)
@@ -88,7 +88,7 @@ app.use(errorHandler);
 
 // Start server
 app.listen(config.port, '0.0.0.0', () => {
-  console.log(`\n🏗️  Datalytics Construction API running on http://localhost:${config.port}`);
+  console.log(`\n🏗️  Datalytics Easy Build API running on http://localhost:${config.port}`);
   console.log(`📊 Environment: ${config.nodeEnv}`);
   console.log(`🔗 Frontend URL: ${config.frontendUrl}\n`);
 });

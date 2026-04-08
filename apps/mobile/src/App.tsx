@@ -135,7 +135,7 @@ function MainApp({ dark, toggleDark, lang, toggleLang }: { dark: boolean; toggle
             <Text style={{ color: '#fff', fontSize: 16, fontWeight: '800' }}>{(tenant?.companyName || 'D')[0]}</Text>
           </View>
         )}
-        <Text style={{ color: txt, fontSize: 18, fontWeight: '700', flex: 1 }}>{tenant?.companyName || 'Datalytics Construction'}</Text>
+        <Text style={{ color: txt, fontSize: 18, fontWeight: '700', flex: 1 }}>{tenant?.companyName || 'Datalytics Easy Build'}</Text>
         {(screen || moreView) && (
           <TouchableOpacity onPress={() => { if (screen) goBack(); else setMoreView(null); }} style={{ paddingVertical: 4, paddingHorizontal: 12 }}>
             <Text style={{ color: C.primary, fontSize: 14, fontWeight: '600' }}>← Back</Text>

@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "Datalytics Construction",
+    "appName": "Datalytics Easy Build",
     "tagline": "Smart Construction Cost Tracking",
     "poweredBy": "Powered by Datalytics AI Global",
     "print": "Print",
@@ -98,7 +98,7 @@
     "ownerName": "Owner Name",
     "passwordMismatch": "Passwords do not match",
     "loginSuccess": "Login successful",
-    "registerSuccess": "Registration successful! Welcome to Datalytics Construction.",
+    "registerSuccess": "Registration successful! Welcome to Datalytics Easy Build.",
     "invalidCredentials": "Invalid email or password",
     "accountExpired": "Your subscription has expired. Please renew to continue.",
     "accountSuspended": "Your account has been suspended. Contact support.",
@@ -479,7 +479,7 @@
     "upgrade": "Upgrade Plan",
     "renew": "Renew Subscription",
     "expired": "Your subscription has expired",
-    "expiredDesc": "Renew your subscription to continue using Datalytics Construction.",
+    "expiredDesc": "Renew your subscription to continue using Datalytics Easy Build.",
     "gracePeriod": "Grace period: {{days}} days remaining",
     "plans": {
       "free_trial": "Free Trial",
