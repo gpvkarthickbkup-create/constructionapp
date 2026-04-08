@@ -59,6 +59,63 @@ router.get('/modules/list', async (_req: AuthRequest, res: Response) => {
   });
 });
 
+// Get full data for a tenant (super admin view)
+router.get('/:id/data', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const tenantId = req.params.id;
+    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, include: { subscription: { include: { plan: true } } } });
+    if (!tenant) throw new NotFoundError('Tenant');
+
+    const [users, sites, expenses, vendors, customers, lands] = await Promise.all([
+      prisma.user.findMany({ where: { tenantId, deletedAt: null }, select: { id: true, email: true, firstName: true, lastName: true, mobile: true, isActive: true, lastLoginAt: true } }),
+      prisma.site.findMany({ where: { tenantId, deletedAt: null }, select: { id: true, siteName: true, siteCode: true, clientName: true, status: true, estimatedBudget: true, totalSqft: true, customerEstimate: true, builderEstimate: true, saleAmount: true, createdAt: true } }),
+      prisma.expense.findMany({ where: { tenantId, deletedAt: null }, select: { id: true, expenseNumber: true, itemName: true, expenseType: true, totalAmount: true, paymentStatus: true, expenseDate: true, site: { select: { siteName: true } }, vendor: { select: { name: true } } }, orderBy: { expenseDate: 'desc' }, take: 50 }),
+      prisma.vendor.findMany({ where: { tenantId, deletedAt: null }, select: { id: true, name: true, vendorCode: true, type: true, mobile: true } }),
+      prisma.customer.findMany({ where: { tenantId, deletedAt: null }, select: { id: true, name: true, mobile: true, email: true } }),
+      prisma.land.findMany({ where: { tenantId, deletedAt: null }, select: { id: true, landName: true, landCode: true, totalArea: true, city: true, purchaseCost: true, currentValue: true, status: true } }),
+    ]);
+
+    // Calculate totals
+    const totalExpenseAmount = expenses.reduce((s, e) => s + (e.totalAmount || 0), 0);
+    const totalBudget = sites.reduce((s, si) => s + (si.estimatedBudget || 0), 0);
+    const pendingExpenses = expenses.filter(e => e.paymentStatus !== 'paid').length;
+
+    sendSuccess(res, {
+      tenant,
+      summary: { totalUsers: users.length, totalSites: sites.length, totalExpenses: expenses.length, totalVendors: vendors.length, totalCustomers: customers.length, totalLands: lands.length, totalExpenseAmount, totalBudget, pendingExpenses },
+      users, sites, expenses, vendors, customers, lands,
+    });
+  } catch (error) { next(error); }
+});
+
+// Export all data for a tenant as JSON (backup)
+router.get('/:id/backup', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const tenantId = req.params.id;
+    const [tenant, users, sites, expenses, vendors, customers, lands, categories] = await Promise.all([
+      prisma.tenant.findUnique({ where: { id: tenantId }, include: { subscription: { include: { plan: true } } } }),
+      prisma.user.findMany({ where: { tenantId } }),
+      prisma.site.findMany({ where: { tenantId }, include: { siteImages: true } }),
+      prisma.expense.findMany({ where: { tenantId }, include: { attachments: true, payments: true } }),
+      prisma.vendor.findMany({ where: { tenantId } }),
+      prisma.customer.findMany({ where: { tenantId }, include: { collections: true } }),
+      prisma.land.findMany({ where: { tenantId }, include: { plots: { include: { payments: true } }, approvals: true, developmentCosts: true } }),
+      prisma.expenseCategory.findMany({ where: { tenantId } }),
+    ]);
+
+    const backup = {
+      exportDate: new Date().toISOString(),
+      companyName: tenant?.companyName,
+      tenantId,
+      data: { tenant, users, sites, expenses, vendors, customers, lands, categories },
+    };
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="backup-${tenant?.companyName?.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.json"`);
+    res.json(backup);
+  } catch (error) { next(error); }
+});
+
 // Get tenant details
 router.get('/:id', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {

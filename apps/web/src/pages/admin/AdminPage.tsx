@@ -20,6 +20,9 @@ import {
   Loader2,
   Save,
   X,
+  Eye,
+  Download,
+  Database,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -129,6 +132,315 @@ function formatDate(dateStr: string) {
     month: 'short',
     year: 'numeric',
   });
+}
+
+function formatCurrency(amount: number | null | undefined) {
+  if (amount == null) return '-';
+  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
+}
+
+const PAYMENT_STATUS_COLORS: Record<string, string> = {
+  paid: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  pending: 'bg-amber-50 text-amber-700 border-amber-200',
+  partial: 'bg-blue-50 text-blue-700 border-blue-200',
+  overdue: 'bg-red-50 text-red-700 border-red-200',
+};
+
+// ─── Tenant Data View (View Client Data) ────────────────────────────
+
+interface TenantDataSummary {
+  totalUsers: number;
+  totalSites: number;
+  totalExpenses: number;
+  totalVendors: number;
+  totalCustomers: number;
+  totalLands: number;
+  totalExpenseAmount: number;
+  totalBudget: number;
+  pendingExpenses: number;
+}
+
+function TenantDataView({ tenantId, companyName }: { tenantId: string; companyName: string }) {
+  const [loading, setLoading] = useState(true);
+  const [dataTab, setDataTab] = useState<'users' | 'sites' | 'expenses' | 'vendors' | 'clients' | 'lands'>('sites');
+  const [summary, setSummary] = useState<TenantDataSummary | null>(null);
+  const [users, setUsers] = useState<any[]>([]);
+  const [sites, setSites] = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<any[]>([]);
+  const [vendors, setVendors] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [lands, setLands] = useState<any[]>([]);
+
+  useEffect(() => {
+    setLoading(true);
+    api.get(`/admin/tenants/${tenantId}/data`)
+      .then(({ data }) => {
+        const d = data.data || data;
+        setSummary(d.summary);
+        setUsers(d.users || []);
+        setSites(d.sites || []);
+        setExpenses(d.expenses || []);
+        setVendors(d.vendors || []);
+        setCustomers(d.customers || []);
+        setLands(d.lands || []);
+      })
+      .catch(() => toast.error('Failed to load tenant data'))
+      .finally(() => setLoading(false));
+  }, [tenantId]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-6 w-6 animate-spin text-[#f26f31]" />
+        <span className="ml-2 text-sm text-gray-500">Loading {companyName} data...</span>
+      </div>
+    );
+  }
+
+  const dataTabs = [
+    { key: 'sites' as const, label: 'Sites', count: summary?.totalSites || 0 },
+    { key: 'expenses' as const, label: 'Expenses', count: summary?.totalExpenses || 0 },
+    { key: 'vendors' as const, label: 'Vendors', count: summary?.totalVendors || 0 },
+    { key: 'clients' as const, label: 'Clients', count: summary?.totalCustomers || 0 },
+    { key: 'lands' as const, label: 'Lands', count: summary?.totalLands || 0 },
+    { key: 'users' as const, label: 'Users', count: summary?.totalUsers || 0 },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {/* Summary Stats */}
+      {summary && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center">
+            <p className="text-xs text-gray-500">Users</p>
+            <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{summary.totalUsers}</p>
+          </div>
+          <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center">
+            <p className="text-xs text-gray-500">Sites</p>
+            <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{summary.totalSites}</p>
+          </div>
+          <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center">
+            <p className="text-xs text-gray-500">Expenses</p>
+            <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{summary.totalExpenses}</p>
+          </div>
+          <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center">
+            <p className="text-xs text-gray-500">Vendors</p>
+            <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{summary.totalVendors}</p>
+          </div>
+          <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center">
+            <p className="text-xs text-gray-500">Customers</p>
+            <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{summary.totalCustomers}</p>
+          </div>
+          <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center">
+            <p className="text-xs text-gray-500">Lands</p>
+            <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{summary.totalLands}</p>
+          </div>
+          <div className="bg-white dark:bg-gray-900 rounded-lg border border-[#f26f31]/30 p-3 text-center">
+            <p className="text-xs text-gray-500">Total Expense Amount</p>
+            <p className="text-lg font-bold text-[#f26f31]">{formatCurrency(summary.totalExpenseAmount)}</p>
+          </div>
+          <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center">
+            <p className="text-xs text-gray-500">Total Budget</p>
+            <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{formatCurrency(summary.totalBudget)}</p>
+          </div>
+          <div className="bg-white dark:bg-gray-900 rounded-lg border border-amber-200 p-3 text-center">
+            <p className="text-xs text-gray-500">Pending Expenses</p>
+            <p className="text-lg font-bold text-amber-600">{summary.pendingExpenses}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Data Tabs */}
+      <div className="flex items-center gap-1 border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
+        {dataTabs.map((dt) => (
+          <button
+            key={dt.key}
+            onClick={() => setDataTab(dt.key)}
+            className={`px-3 py-2 text-xs font-medium border-b-2 transition-colors whitespace-nowrap ${
+              dataTab === dt.key
+                ? 'border-[#f26f31] text-[#f26f31]'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {dt.label} ({dt.count})
+          </button>
+        ))}
+      </div>
+
+      {/* Tab Content */}
+      <div className="overflow-x-auto">
+        {dataTab === 'users' && (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Name</th>
+                <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Email</th>
+                <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Mobile</th>
+                <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Active</th>
+                <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Last Login</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              {users.map((u: any, i: number) => (
+                <tr key={u.id} className={i % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50/50 dark:bg-gray-800/20'}>
+                  <td className="px-3 py-2 font-medium text-gray-900 dark:text-gray-100">{u.firstName} {u.lastName}</td>
+                  <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{u.email}</td>
+                  <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{u.mobile || '-'}</td>
+                  <td className="px-3 py-2">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${u.isActive ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+                      {u.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2 text-gray-500 text-xs">{u.lastLoginAt ? formatDate(u.lastLoginAt) : 'Never'}</td>
+                </tr>
+              ))}
+              {users.length === 0 && <tr><td colSpan={5} className="px-3 py-6 text-center text-gray-400">No users</td></tr>}
+            </tbody>
+          </table>
+        )}
+
+        {dataTab === 'sites' && (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Name</th>
+                <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Code</th>
+                <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Client</th>
+                <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Status</th>
+                <th className="text-right px-3 py-2 text-xs font-semibold text-gray-500">Budget</th>
+                <th className="text-right px-3 py-2 text-xs font-semibold text-gray-500">Sqft</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              {sites.map((s: any, i: number) => (
+                <tr key={s.id} className={i % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50/50 dark:bg-gray-800/20'}>
+                  <td className="px-3 py-2 font-medium text-gray-900 dark:text-gray-100">{s.siteName}</td>
+                  <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{s.siteCode || '-'}</td>
+                  <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{s.clientName || '-'}</td>
+                  <td className="px-3 py-2"><StatusBadge status={s.status || 'active'} /></td>
+                  <td className="px-3 py-2 text-right text-gray-900 dark:text-gray-100">{formatCurrency(s.estimatedBudget)}</td>
+                  <td className="px-3 py-2 text-right text-gray-600 dark:text-gray-400">{s.totalSqft?.toLocaleString() || '-'}</td>
+                </tr>
+              ))}
+              {sites.length === 0 && <tr><td colSpan={6} className="px-3 py-6 text-center text-gray-400">No sites</td></tr>}
+            </tbody>
+          </table>
+        )}
+
+        {dataTab === 'expenses' && (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Date</th>
+                <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Number</th>
+                <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Item</th>
+                <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Type</th>
+                <th className="text-right px-3 py-2 text-xs font-semibold text-gray-500">Amount</th>
+                <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Status</th>
+                <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Site</th>
+                <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Vendor</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              {expenses.map((e: any, i: number) => (
+                <tr key={e.id} className={i % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50/50 dark:bg-gray-800/20'}>
+                  <td className="px-3 py-2 text-gray-500 text-xs">{e.expenseDate ? formatDate(e.expenseDate) : '-'}</td>
+                  <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{e.expenseNumber || '-'}</td>
+                  <td className="px-3 py-2 font-medium text-gray-900 dark:text-gray-100">{e.itemName || '-'}</td>
+                  <td className="px-3 py-2 text-gray-600 dark:text-gray-400 capitalize">{e.expenseType || '-'}</td>
+                  <td className="px-3 py-2 text-right text-gray-900 dark:text-gray-100">{formatCurrency(e.totalAmount)}</td>
+                  <td className="px-3 py-2">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border capitalize ${PAYMENT_STATUS_COLORS[e.paymentStatus] || 'bg-gray-50 text-gray-700 border-gray-200'}`}>
+                      {e.paymentStatus || '-'}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{e.site?.siteName || '-'}</td>
+                  <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{e.vendor?.name || '-'}</td>
+                </tr>
+              ))}
+              {expenses.length === 0 && <tr><td colSpan={8} className="px-3 py-6 text-center text-gray-400">No expenses</td></tr>}
+            </tbody>
+          </table>
+        )}
+
+        {dataTab === 'vendors' && (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Name</th>
+                <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Code</th>
+                <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Type</th>
+                <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Mobile</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              {vendors.map((v: any, i: number) => (
+                <tr key={v.id} className={i % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50/50 dark:bg-gray-800/20'}>
+                  <td className="px-3 py-2 font-medium text-gray-900 dark:text-gray-100">{v.name}</td>
+                  <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{v.vendorCode || '-'}</td>
+                  <td className="px-3 py-2 text-gray-600 dark:text-gray-400 capitalize">{v.type || '-'}</td>
+                  <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{v.mobile || '-'}</td>
+                </tr>
+              ))}
+              {vendors.length === 0 && <tr><td colSpan={4} className="px-3 py-6 text-center text-gray-400">No vendors</td></tr>}
+            </tbody>
+          </table>
+        )}
+
+        {dataTab === 'clients' && (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Name</th>
+                <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Mobile</th>
+                <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Email</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              {customers.map((c: any, i: number) => (
+                <tr key={c.id} className={i % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50/50 dark:bg-gray-800/20'}>
+                  <td className="px-3 py-2 font-medium text-gray-900 dark:text-gray-100">{c.name}</td>
+                  <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{c.mobile || '-'}</td>
+                  <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{c.email || '-'}</td>
+                </tr>
+              ))}
+              {customers.length === 0 && <tr><td colSpan={3} className="px-3 py-6 text-center text-gray-400">No clients</td></tr>}
+            </tbody>
+          </table>
+        )}
+
+        {dataTab === 'lands' && (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Name</th>
+                <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Code</th>
+                <th className="text-right px-3 py-2 text-xs font-semibold text-gray-500">Area</th>
+                <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">City</th>
+                <th className="text-right px-3 py-2 text-xs font-semibold text-gray-500">Purchase Cost</th>
+                <th className="text-right px-3 py-2 text-xs font-semibold text-gray-500">Current Value</th>
+                <th className="text-left px-3 py-2 text-xs font-semibold text-gray-500">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              {lands.map((l: any, i: number) => (
+                <tr key={l.id} className={i % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50/50 dark:bg-gray-800/20'}>
+                  <td className="px-3 py-2 font-medium text-gray-900 dark:text-gray-100">{l.landName}</td>
+                  <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{l.landCode || '-'}</td>
+                  <td className="px-3 py-2 text-right text-gray-600 dark:text-gray-400">{l.totalArea?.toLocaleString() || '-'}</td>
+                  <td className="px-3 py-2 text-gray-600 dark:text-gray-400">{l.city || '-'}</td>
+                  <td className="px-3 py-2 text-right text-gray-900 dark:text-gray-100">{formatCurrency(l.purchaseCost)}</td>
+                  <td className="px-3 py-2 text-right text-gray-900 dark:text-gray-100">{formatCurrency(l.currentValue)}</td>
+                  <td className="px-3 py-2"><StatusBadge status={l.status || 'active'} /></td>
+                </tr>
+              ))}
+              {lands.length === 0 && <tr><td colSpan={7} className="px-3 py-6 text-center text-gray-400">No lands</td></tr>}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // ─── Overview Tab ────────────────────────────────────────────────────
@@ -664,7 +976,22 @@ function CompaniesTab({
   onSubscriptionUpdate: (id: string, planId: string, endDate: string) => Promise<void>;
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [viewDataId, setViewDataId] = useState<string | null>(null);
   const [moduleLockTarget, setModuleLockTarget] = useState<Tenant | null>(null);
+
+  const handleBackup = async (tenantId: string, companyName: string) => {
+    try {
+      const res = await api.get(`/admin/tenants/${tenantId}/backup`);
+      const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `backup-${companyName.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Backup downloaded');
+    } catch { toast.error('Backup failed'); }
+  };
 
   const statusOptions = ['all', 'active', 'trial', 'expired', 'suspended'];
 
@@ -833,6 +1160,22 @@ function CompaniesTab({
                           >
                             <Lock className="h-3 w-3" /> Modules
                           </button>
+                          <button
+                            onClick={() => setViewDataId(viewDataId === t.id ? null : t.id)}
+                            className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors flex items-center gap-1 ${
+                              viewDataId === t.id
+                                ? 'text-white bg-[#f26f31]'
+                                : 'text-purple-600 bg-purple-50 hover:bg-purple-100'
+                            }`}
+                          >
+                            <Eye className="h-3 w-3" /> View Data
+                          </button>
+                          <button
+                            onClick={() => handleBackup(t.id, t.companyName)}
+                            className="px-2.5 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 transition-colors flex items-center gap-1"
+                          >
+                            <Download className="h-3 w-3" /> Backup
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -846,6 +1189,27 @@ function CompaniesTab({
                         onModuleSave={onModuleSave}
                         onSubscriptionUpdate={onSubscriptionUpdate}
                       />
+                    )}
+                    {viewDataId === t.id && (
+                      <tr key={`viewdata-${t.id}`}>
+                        <td colSpan={10} className="p-0">
+                          <div className="bg-gray-50 dark:bg-gray-800/50 border-t border-b border-gray-200 dark:border-gray-700 px-6 py-5">
+                            <div className="flex items-center justify-between mb-4">
+                              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                                <Database className="h-4 w-4 text-[#f26f31]" />
+                                {t.companyName} - Full Data View
+                              </h3>
+                              <button
+                                onClick={() => setViewDataId(null)}
+                                className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                              >
+                                <X className="h-4 w-4 text-gray-500" />
+                              </button>
+                            </div>
+                            <TenantDataView tenantId={t.id} companyName={t.companyName} />
+                          </div>
+                        </td>
+                      </tr>
                     )}
                   </>
                 ))
