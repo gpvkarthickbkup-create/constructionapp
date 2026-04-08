@@ -150,7 +150,7 @@ function MainApp({ dark, toggleDark, lang, toggleLang }: { dark: boolean; toggle
 
       {/* Bottom Tabs */}
       {!screen && (
-        <View style={{ flexDirection: 'row', backgroundColor: dark ? C.cardDark : '#FFFFFF', borderTopWidth: 1, borderTopColor: dark ? C.borderDark : C.border, paddingBottom: Platform.OS === 'ios' ? 24 : 40, height: 60 + (Platform.OS === 'ios' ? 24 : 40) }}>
+        <View style={{ flexDirection: 'row', backgroundColor: dark ? C.cardDark : '#FFFFFF', borderTopWidth: 1, borderTopColor: dark ? C.borderDark : C.border, paddingBottom: Platform.OS === 'ios' ? 20 : 8, height: 60 + (Platform.OS === 'ios' ? 20 : 8) }}>
           {tabs.map(t => {
             if (t.key === 'add') return (
               <TouchableOpacity key={t.key} onPress={() => nav('addExpense')} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
