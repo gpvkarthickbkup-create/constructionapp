@@ -380,17 +380,24 @@ export default function SettingsPage() {
                                 onChange={async (e) => {
                                   const file = e.target.files?.[0];
                                   if (!file) return;
-                                  const formData = new FormData();
-                                  formData.append('file', file);
-                                  try {
-                                    const res = await api.post('/upload/single', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-                                    updateField('logo', res.data.data.url);
-                                    toast.success(t('settings.logoUploaded', 'Logo uploaded'));
-                                  } catch { toast.error(t('settings.uploadFailed', 'Upload failed')); }
+                                  if (file.size > 500000) { toast.error('Logo must be under 500KB'); return; }
+                                  const reader = new FileReader();
+                                  reader.onload = () => {
+                                    updateField('logo', reader.result as string);
+                                    toast.success('Logo set! Click Save to apply.');
+                                  };
+                                  reader.readAsDataURL(file);
                                 }}
                               />
                             </label>
-                            <p className="text-xs text-gray-400 mt-1">PNG, JPG (max 2MB)</p>
+                            <p className="text-xs text-gray-400 mt-1">PNG, JPG (under 500KB)</p>
+                            <input
+                              type="text"
+                              value={companyForm.logo.startsWith('data:') ? '' : companyForm.logo}
+                              onChange={(e) => updateField('logo', e.target.value)}
+                              placeholder="Or paste logo URL..."
+                              className="mt-2 w-full h-9 rounded-lg border border-gray-200 px-3 text-xs"
+                            />
                           </div>
                         </div>
                       </div>
