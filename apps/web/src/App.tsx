@@ -43,13 +43,32 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  const { isAuthenticated, fetchMe, isLoading } = useAuthStore();
+  const { isAuthenticated, fetchMe, refreshTenant, isLoading } = useAuthStore();
 
   useEffect(() => {
     if (isAuthenticated) {
       fetchMe();
     }
   }, []);
+
+  // Periodically refresh tenant data (every 2 minutes) to pick up lockedModules changes
+  // Also refresh when tab becomes visible again
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const interval = setInterval(() => {
+      refreshTenant();
+    }, 2 * 60 * 1000);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshTenant();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [isAuthenticated]);
 
   if (isLoading && isAuthenticated) {
     return (

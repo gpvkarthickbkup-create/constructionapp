@@ -32,6 +32,7 @@ interface AuthState {
   register: (data: any) => Promise<void>;
   logout: () => Promise<void>;
   fetchMe: () => Promise<void>;
+  refreshTenant: () => Promise<void>;
   setLanguage: (lang: string) => void;
   toggleTheme: () => void;
 }
@@ -92,6 +93,18 @@ export const useAuthStore = create<AuthState>((set) => ({
       localStorage.removeItem('buildwise_token');
       localStorage.removeItem('buildwise_refresh_token');
       set({ user: null, tenant: null, isAuthenticated: false, isLoading: false });
+    }
+  },
+
+  refreshTenant: async () => {
+    try {
+      const { data } = await api.get('/auth/me');
+      set({
+        user: data.data,
+        tenant: data.data.tenant,
+      });
+    } catch {
+      // Silently ignore — don't logout on background refresh failure
     }
   },
 

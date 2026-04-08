@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Platform, Image, BackHandler, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, Platform, Image, BackHandler, Alert, AppState } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as NavigationBar from 'expo-navigation-bar';
 import { useAuthStore } from './store/authStore';
@@ -180,8 +180,27 @@ export default function App() {
   const isAuth = useAuthStore(s => s.isAuthenticated);
   const [ready, setReady] = useState(false);
   const loadToken = useAuthStore(s => s.loadToken);
+  const refreshTenant = useAuthStore(s => s.refreshTenant);
 
   useEffect(() => { loadToken().finally(() => setReady(true)); }, []);
+
+  // Periodically refresh tenant data (every 2 minutes) to pick up lockedModules changes
+  // Also refresh when app comes to foreground
+  useEffect(() => {
+    if (!isAuth) return;
+    const interval = setInterval(() => {
+      refreshTenant();
+    }, 2 * 60 * 1000);
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        refreshTenant();
+      }
+    });
+    return () => {
+      clearInterval(interval);
+      sub.remove();
+    };
+  }, [isAuth]);
 
   // Hide Android navigation bar — swipe up from bottom to show temporarily
   useEffect(() => {

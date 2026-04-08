@@ -112,9 +112,15 @@ export function SiteDetailScreen({ siteId, back, nav, dark }: { siteId: string; 
   const profitLoss = saleAmt > 0 ? saleAmt - spent : custEst - spent;
   const marginPct = saleAmt > 0 ? (saleAmt > 0 ? ((profitLoss / saleAmt) * 100) : 0) : (custEst > 0 ? ((profitLoss / custEst) * 100) : 0);
   const sqftVal = s.totalSqft || 0;
+  const hasSqftData = sqftVal > 0 && (s.customerRatePerSqft > 0 || s.builderRatePerSqft > 0);
   const costPerSqft = sqftVal > 0 ? spent / sqftVal : 0;
   const matPerSqft = sqftVal > 0 ? (sum.materialCost || 0) / sqftVal : 0;
   const labPerSqft = sqftVal > 0 ? (sum.laborCost || 0) / sqftVal : 0;
+  // Effective budget for progress display
+  const effectiveBudget = buildEst > 0 ? buildEst : budgetAmt;
+  const effectiveRemaining = effectiveBudget - spent;
+  const effectiveProgress = effectiveBudget > 0 ? Math.min((spent / effectiveBudget) * 100, 100) : 0;
+  const progressColor = effectiveProgress > 90 ? C.danger : effectiveProgress >= 60 ? C.warning : C.success;
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: bg }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}>
@@ -139,44 +145,66 @@ export function SiteDetailScreen({ siteId, back, nav, dark }: { siteId: string; 
           ))}
         </View>
 
-        {/* Financial Cards */}
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 20 }}>
-          {[
-            { l: 'Customer Estimate', v: custEst, cl: '#6366F1' },
-            { l: 'Builder Estimate', v: buildEst, cl: C.primary },
-            { l: 'Sale Amount', v: saleAmt, cl: '#8B5CF6' },
-            { l: 'Actual Spent', v: spent, cl: C.danger },
-            { l: 'Profit/Loss', v: profitLoss, cl: profitLoss >= 0 ? C.success : C.danger },
-            { l: 'Margin %', v: null, cl: marginPct >= 0 ? C.success : C.danger },
-          ].map((it, i) => (
-            <View key={i} style={{ width: '48%', backgroundColor: card, padding: 14, borderRadius: 14, borderWidth: 1, borderColor: border }}>
-              <Text style={{ color: C.sub, fontSize: 11, fontWeight: '500' }}>{it.l}</Text>
-              <Text style={{ color: it.cl, fontSize: 16, fontWeight: '700', marginTop: 4 }}>
-                {it.l === 'Margin %' ? `${marginPct.toFixed(1)}%` : fmt(it.v || 0)}
+        {/* Budget Overview — Always visible */}
+        <View style={{ backgroundColor: card, borderRadius: 16, borderWidth: 1, borderColor: border, padding: 16, marginTop: 20 }}>
+          {/* Budget */}
+          <View style={{ alignItems: 'center', marginBottom: 12 }}>
+            <Text style={{ color: C.sub, fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 }}>Estimated Budget</Text>
+            <Text style={{ color: C.primary, fontSize: 28, fontWeight: '800', marginTop: 4 }}>{effectiveBudget > 0 ? fmt(effectiveBudget) : 'Not Set'}</Text>
+            {effectiveBudget > 0 && <Text style={{ color: C.sub, fontSize: 11, fontStyle: 'italic', marginTop: 2 }}>{amtWords(effectiveBudget)}</Text>}
+          </View>
+
+          {/* Spent & Remaining row */}
+          <View style={{ flexDirection: 'row', marginTop: 8 }}>
+            <View style={{ flex: 1, alignItems: 'center', paddingVertical: 10, backgroundColor: spent > effectiveBudget && effectiveBudget > 0 ? '#FEF2F2' : '#FFF7ED', borderRadius: 12, marginRight: 6 }}>
+              <Text style={{ color: C.sub, fontSize: 11, fontWeight: '600', textTransform: 'uppercase' }}>Spent</Text>
+              <Text style={{ color: spent > effectiveBudget && effectiveBudget > 0 ? C.danger : '#EA580C', fontSize: 20, fontWeight: '800', marginTop: 4 }}>{fmt(spent)}</Text>
+            </View>
+            <View style={{ flex: 1, alignItems: 'center', paddingVertical: 10, backgroundColor: effectiveRemaining >= 0 ? '#F0FDF4' : '#FEF2F2', borderRadius: 12, marginLeft: 6 }}>
+              <Text style={{ color: C.sub, fontSize: 11, fontWeight: '600', textTransform: 'uppercase' }}>{effectiveRemaining >= 0 ? 'Remaining' : 'Over Budget'}</Text>
+              <Text style={{ color: effectiveRemaining >= 0 ? C.success : C.danger, fontSize: 20, fontWeight: '800', marginTop: 4 }}>{effectiveBudget > 0 ? fmt(Math.abs(effectiveRemaining)) : '-'}</Text>
+            </View>
+          </View>
+
+          {/* Progress Bar — Large */}
+          {effectiveBudget > 0 && (
+            <View style={{ marginTop: 16 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                <Text style={{ color: C.sub, fontSize: 12, fontWeight: '600' }}>Budget Used</Text>
+                <Text style={{ color: progressColor, fontSize: 16, fontWeight: '800' }}>{effectiveProgress.toFixed(1)}%</Text>
+              </View>
+              <View style={{ height: 12, backgroundColor: inputBg, borderRadius: 6 }}>
+                <View style={{ height: 12, backgroundColor: progressColor, borderRadius: 6, width: `${Math.min(effectiveProgress, 100)}%` }} />
+              </View>
+              <Text style={{ color: effectiveRemaining >= 0 ? C.success : C.danger, fontSize: 12, fontWeight: '600', marginTop: 6, textAlign: 'right' }}>
+                {effectiveRemaining >= 0 ? `${fmt(effectiveRemaining)} remaining` : `${fmt(Math.abs(effectiveRemaining))} over budget`}
               </Text>
             </View>
-          ))}
+          )}
+          {effectiveBudget === 0 && (
+            <Text style={{ color: C.sub, fontSize: 12, textAlign: 'center', marginTop: 8 }}>No budget set. Edit site to add budget.</Text>
+          )}
         </View>
 
-        {/* Budget Progress */}
-        <View style={{ backgroundColor: card, borderRadius: 16, borderWidth: 1, borderColor: border, padding: 16, marginTop: 16 }}>
-          <View style={{ flexDirection: 'row' }}>
-            {[{ l: 'Budget', v: budgetAmt, cl: txt }, { l: 'Spent', v: spent, cl: C.danger }, { l: 'Remaining', v: remaining, cl: remaining >= 0 ? C.success : C.danger }].map((it, i) => (
-              <React.Fragment key={i}>
-                {i > 0 && <View style={{ width: 1, backgroundColor: border }} />}
-                <View style={{ flex: 1, alignItems: 'center' }}>
-                  <Text style={{ color: C.sub, fontSize: 12, fontWeight: '500' }}>{it.l}</Text>
-                  <Text style={{ color: it.cl, fontSize: 16, fontWeight: '700', marginTop: 4 }}>{fmt(it.v)}</Text>
-                </View>
-              </React.Fragment>
+        {/* SQFT-based Financial Cards — Only when SQFT data exists */}
+        {hasSqftData && (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 }}>
+            {[
+              custEst > 0 ? { l: 'Customer Estimate', v: custEst, cl: '#6366F1' } : null,
+              buildEst > 0 ? { l: 'Builder Estimate', v: buildEst, cl: C.primary } : null,
+              saleAmt > 0 ? { l: 'Sale Amount', v: saleAmt, cl: '#8B5CF6' } : null,
+              saleAmt > 0 ? { l: 'Profit/Loss', v: profitLoss, cl: profitLoss >= 0 ? C.success : C.danger } : null,
+              saleAmt > 0 ? { l: 'Margin %', v: null, cl: marginPct >= 0 ? C.success : C.danger } : null,
+            ].filter(Boolean).map((it: any, i) => (
+              <View key={i} style={{ width: '48%', backgroundColor: card, padding: 14, borderRadius: 14, borderWidth: 1, borderColor: border }}>
+                <Text style={{ color: C.sub, fontSize: 11, fontWeight: '500' }}>{it.l}</Text>
+                <Text style={{ color: it.cl, fontSize: 16, fontWeight: '700', marginTop: 4 }}>
+                  {it.l === 'Margin %' ? `${marginPct.toFixed(1)}%` : fmt(it.v || 0)}
+                </Text>
+              </View>
             ))}
           </View>
-          <View style={{ height: 4, backgroundColor: inputBg, borderRadius: 2, marginTop: 16 }}>
-            <View style={{ height: 4, backgroundColor: progress > 90 ? C.danger : progress > 70 ? C.warning : C.primary, borderRadius: 2, width: `${Math.min(progress, 100)}%` }} />
-          </View>
-          <Text style={{ color: C.sub, fontSize: 12, marginTop: 8 }}>{progress.toFixed(1)}% used</Text>
-          <Text style={{ color: C.sub, fontSize: 12, marginTop: 4, fontStyle: 'italic' }}>{amtWords(spent)}</Text>
-        </View>
+        )}
 
         {/* Material / Labor / Other */}
         <View style={{ flexDirection: 'row', gap: 8, marginTop: 16 }}>

@@ -131,25 +131,35 @@ export default function SiteDetailPage() {
 
   // Financial calculations
   const customerEstimate = site.customerEstimate || 0;
-  const builderEstimate = site.builderEstimate || site.estimatedBudget || 0;
+  const builderEstimate = site.builderEstimate || 0;
+  const estimatedBudget = site.estimatedBudget || 0;
   const saleAmount = site.saleAmount || 0;
   const actualSpent = summary.totalCost || 0;
+  const totalSqft = site.totalSqft || 0;
+
+  // Determine if this is a SQFT-based site or simple-budget site
+  const hasSqftData = totalSqft > 0 && (site.customerRatePerSqft > 0 || site.builderRatePerSqft > 0);
+
+  // The effective budget: use builderEstimate if set, otherwise estimatedBudget, otherwise customerEstimate
+  const effectiveBudget = builderEstimate > 0 ? builderEstimate : (estimatedBudget > 0 ? estimatedBudget : customerEstimate);
+
   const profitLoss = saleAmount > 0 ? saleAmount - actualSpent : 0;
   const profitMarginPercent = saleAmount > 0 ? (profitLoss / saleAmount) * 100 : 0;
-  const budgetUsedPercent = builderEstimate > 0 ? Math.round((actualSpent / builderEstimate) * 100) : 0;
-  const budgetRemaining = builderEstimate - actualSpent;
-  const isOverBudget = actualSpent > builderEstimate && builderEstimate > 0;
-  const totalSqft = site.totalSqft || 0;
-  const estimatedCostPerSqft = site.builderRatePerSqft || (totalSqft > 0 ? builderEstimate / totalSqft : 0);
+  const budgetUsedPercent = effectiveBudget > 0 ? Math.round((actualSpent / effectiveBudget) * 100) : 0;
+  const budgetRemaining = effectiveBudget - actualSpent;
+  const isOverBudget = actualSpent > effectiveBudget && effectiveBudget > 0;
+  const estimatedCostPerSqft = site.builderRatePerSqft || (totalSqft > 0 ? effectiveBudget / totalSqft : 0);
   const actualCostPerSqft = totalSqft > 0 ? actualSpent / totalSqft : 0;
   const costPerSqftVariance = actualCostPerSqft - estimatedCostPerSqft;
 
   const budgetBarColor =
     budgetUsedPercent > 100
       ? 'bg-red-500'
-      : budgetUsedPercent >= 80
-        ? 'bg-yellow-500'
-        : 'bg-green-500';
+      : budgetUsedPercent >= 90
+        ? 'bg-red-400'
+        : budgetUsedPercent >= 60
+          ? 'bg-yellow-500'
+          : 'bg-green-500';
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -171,7 +181,7 @@ export default function SiteDetailPage() {
           <div>
             <p className="font-semibold text-red-800">Budget Exceeded!</p>
             <p className="text-sm text-red-600">
-              Builder Budget: {formatCurrency(builderEstimate)} | Actual Spent: {formatCurrency(actualSpent)} ({budgetUsedPercent}%)
+              Budget: {formatCurrency(effectiveBudget)} | Actual Spent: {formatCurrency(actualSpent)} ({budgetUsedPercent}%)
             </p>
           </div>
         </div>
@@ -268,158 +278,187 @@ export default function SiteDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Financial Overview Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {/* Customer Estimate */}
-        {customerEstimate > 0 && (
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-5">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-50">
-                  <Target className="h-5 w-5 text-green-600" />
-                </div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Customer Estimate</p>
+      {/* Budget Overview — Always visible */}
+      <Card className="border-0 shadow-lg">
+        <CardContent className="p-6">
+          {/* Budget / Spent / Remaining row */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-6">
+            {/* Estimated Budget */}
+            <div className="rounded-xl bg-blue-50 border border-blue-200 p-5 text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Wallet className="h-5 w-5 text-blue-600" />
+                <p className="text-xs font-semibold text-blue-700 uppercase tracking-wider">Estimated Budget</p>
               </div>
-              <p className="text-2xl font-bold text-green-700">{formatCurrency(customerEstimate)}</p>
-              <p className="text-xs text-green-600/70 italic mt-1">{amountToWords(customerEstimate)}</p>
-            </CardContent>
-          </Card>
-        )}
+              <p className="text-3xl font-extrabold text-blue-700">{formatCurrency(effectiveBudget)}</p>
+              {effectiveBudget > 0 && <p className="text-xs text-blue-600/70 italic mt-1">{amountToWords(effectiveBudget)}</p>}
+              {effectiveBudget === 0 && <p className="text-xs text-blue-500 mt-1">No budget set</p>}
+            </div>
 
-        {/* Builder Estimate */}
-        {builderEstimate > 0 && (
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-5">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50">
-                  <Wallet className="h-5 w-5 text-orange-600" />
-                </div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Builder Estimate</p>
+            {/* Total Spent */}
+            <div className={cn('rounded-xl border p-5 text-center', isOverBudget ? 'bg-red-50 border-red-200' : 'bg-orange-50 border-orange-200')}>
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <BarChart3 className={cn('h-5 w-5', isOverBudget ? 'text-red-600' : 'text-orange-600')} />
+                <p className={cn('text-xs font-semibold uppercase tracking-wider', isOverBudget ? 'text-red-700' : 'text-orange-700')}>Total Spent</p>
               </div>
-              <p className="text-2xl font-bold text-orange-700">{formatCurrency(builderEstimate)}</p>
-              <p className="text-xs text-orange-600/70 italic mt-1">{amountToWords(builderEstimate)}</p>
-            </CardContent>
-          </Card>
-        )}
+              <p className={cn('text-3xl font-extrabold', isOverBudget ? 'text-red-700' : 'text-orange-700')}>{formatCurrency(actualSpent)}</p>
+              {actualSpent > 0 && <p className={cn('text-xs italic mt-1', isOverBudget ? 'text-red-600/70' : 'text-orange-600/70')}>{amountToWords(actualSpent)}</p>}
+            </div>
 
-        {/* Sale Amount */}
-        {saleAmount > 0 && (
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-5">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50">
-                  <IndianRupee className="h-5 w-5 text-blue-600" />
-                </div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Sale Amount</p>
+            {/* Remaining */}
+            <div className={cn('rounded-xl border p-5 text-center', effectiveBudget > 0 ? (budgetRemaining >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200') : 'bg-gray-50 border-gray-200')}>
+              <div className="flex items-center justify-center gap-2 mb-2">
+                {budgetRemaining >= 0 ? <TrendingUp className="h-5 w-5 text-green-600" /> : <TrendingDown className="h-5 w-5 text-red-600" />}
+                <p className={cn('text-xs font-semibold uppercase tracking-wider', effectiveBudget > 0 ? (budgetRemaining >= 0 ? 'text-green-700' : 'text-red-700') : 'text-gray-600')}>
+                  {budgetRemaining >= 0 ? 'Remaining' : 'Over Budget'}
+                </p>
               </div>
-              <p className="text-2xl font-bold text-blue-700">{formatCurrency(saleAmount)}</p>
-              <p className="text-xs text-blue-600/70 italic mt-1">{amountToWords(saleAmount)}</p>
-            </CardContent>
-          </Card>
-        )}
+              <p className={cn('text-3xl font-extrabold', effectiveBudget > 0 ? (budgetRemaining >= 0 ? 'text-green-700' : 'text-red-700') : 'text-gray-500')}>
+                {effectiveBudget > 0 ? formatCurrency(Math.abs(budgetRemaining)) : '-'}
+              </p>
+              {effectiveBudget > 0 && budgetRemaining < 0 && <p className="text-xs text-red-600 font-semibold mt-1">Over budget!</p>}
+              {effectiveBudget > 0 && budgetRemaining >= 0 && <p className="text-xs text-green-600/70 italic mt-1">{amountToWords(budgetRemaining)}</p>}
+            </div>
+          </div>
 
-        {/* Actual Spent */}
+          {/* Budget Progress Bar — Large and prominent */}
+          {effectiveBudget > 0 && (
+            <>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Budget Used</h3>
+                <span className={cn('text-lg font-bold', budgetUsedPercent > 90 ? 'text-red-600' : budgetUsedPercent >= 60 ? 'text-yellow-600' : 'text-green-600')}>
+                  {budgetUsedPercent}%
+                </span>
+              </div>
+              <div className="h-6 w-full overflow-hidden rounded-full bg-gray-100">
+                <div
+                  className={cn('h-full rounded-full transition-all', budgetBarColor)}
+                  style={{ width: `${Math.min(budgetUsedPercent, 100)}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between mt-2 text-sm">
+                <span className="text-muted-foreground">{formatCurrency(actualSpent)} / {formatCurrency(effectiveBudget)}</span>
+                <span className={cn('font-semibold', isOverBudget ? 'text-red-600' : 'text-green-600')}>
+                  {isOverBudget
+                    ? `${formatCurrency(Math.abs(budgetRemaining))} over budget`
+                    : `${formatCurrency(budgetRemaining)} remaining`
+                  }
+                </span>
+              </div>
+            </>
+          )}
+          {effectiveBudget === 0 && (
+            <div className="text-center py-2">
+              <p className="text-sm text-muted-foreground">No budget set for this site. Edit the site to add an estimated budget.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* SQFT-based Financial Cards — Only show when SQFT data exists */}
+      {hasSqftData && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Customer Estimate */}
+          {customerEstimate > 0 && (
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-5">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-50">
+                    <Target className="h-5 w-5 text-green-600" />
+                  </div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Customer Estimate</p>
+                </div>
+                <p className="text-2xl font-bold text-green-700">{formatCurrency(customerEstimate)}</p>
+                <p className="text-xs text-green-600/70 italic mt-1">{amountToWords(customerEstimate)}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Builder Estimate */}
+          {builderEstimate > 0 && (
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-5">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50">
+                    <Wallet className="h-5 w-5 text-orange-600" />
+                  </div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Builder Estimate</p>
+                </div>
+                <p className="text-2xl font-bold text-orange-700">{formatCurrency(builderEstimate)}</p>
+                <p className="text-xs text-orange-600/70 italic mt-1">{amountToWords(builderEstimate)}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Sale Amount */}
+          {saleAmount > 0 && (
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-5">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50">
+                    <IndianRupee className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Sale Amount</p>
+                </div>
+                <p className="text-2xl font-bold text-blue-700">{formatCurrency(saleAmount)}</p>
+                <p className="text-xs text-blue-600/70 italic mt-1">{amountToWords(saleAmount)}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Profit / Loss */}
+          {saleAmount > 0 && (
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-5">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className={cn('flex h-10 w-10 items-center justify-center rounded-xl', profitLoss >= 0 ? 'bg-green-50' : 'bg-red-50')}>
+                    {profitLoss >= 0 ? <TrendingUp className="h-5 w-5 text-green-600" /> : <TrendingDown className="h-5 w-5 text-red-600" />}
+                  </div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    {profitLoss >= 0 ? 'Profit' : 'Loss'}
+                  </p>
+                </div>
+                <p className={cn('text-2xl font-bold', profitLoss >= 0 ? 'text-green-700' : 'text-red-700')}>
+                  {formatCurrency(Math.abs(profitLoss))}
+                </p>
+                <p className={cn('text-xs italic mt-1', profitLoss >= 0 ? 'text-green-600/70' : 'text-red-600/70')}>
+                  {amountToWords(Math.abs(profitLoss))}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Profit Margin */}
+          {saleAmount > 0 && (
+            <Card className="border-0 shadow-sm">
+              <CardContent className="p-5">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className={cn('flex h-10 w-10 items-center justify-center rounded-xl', profitMarginPercent >= 0 ? 'bg-emerald-50' : 'bg-red-50')}>
+                    <TrendingUp className={cn('h-5 w-5', profitMarginPercent >= 0 ? 'text-emerald-600' : 'text-red-600')} />
+                  </div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Profit Margin</p>
+                </div>
+                <p className={cn('text-2xl font-bold', profitMarginPercent >= 0 ? 'text-emerald-700' : 'text-red-700')}>
+                  {profitMarginPercent.toFixed(1)}%
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">Sale Amount - Actual Spent</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Pending Payments */}
+      {summary.pendingPayments > 0 && (
         <Card className="border-0 shadow-sm">
           <CardContent className="p-5">
             <div className="flex items-center gap-3 mb-2">
-              <div className={cn('flex h-10 w-10 items-center justify-center rounded-xl', isOverBudget ? 'bg-red-50' : 'bg-purple-50')}>
-                <BarChart3 className={cn('h-5 w-5', isOverBudget ? 'text-red-600' : 'text-purple-600')} />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50">
+                <Clock className="h-5 w-5 text-red-600" />
               </div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Actual Spent</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Pending Payments</p>
             </div>
-            <p className={cn('text-2xl font-bold', isOverBudget ? 'text-red-700' : 'text-purple-700')}>{formatCurrency(actualSpent)}</p>
-            <p className={cn('text-xs italic mt-1', isOverBudget ? 'text-red-600/70' : 'text-purple-600/70')}>{amountToWords(actualSpent)}</p>
-          </CardContent>
-        </Card>
-
-        {/* Profit / Loss */}
-        {saleAmount > 0 && (
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-5">
-              <div className="flex items-center gap-3 mb-2">
-                <div className={cn('flex h-10 w-10 items-center justify-center rounded-xl', profitLoss >= 0 ? 'bg-green-50' : 'bg-red-50')}>
-                  {profitLoss >= 0 ? <TrendingUp className="h-5 w-5 text-green-600" /> : <TrendingDown className="h-5 w-5 text-red-600" />}
-                </div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  {profitLoss >= 0 ? 'Profit' : 'Loss'}
-                </p>
-              </div>
-              <p className={cn('text-2xl font-bold', profitLoss >= 0 ? 'text-green-700' : 'text-red-700')}>
-                {formatCurrency(Math.abs(profitLoss))}
-              </p>
-              <p className={cn('text-xs italic mt-1', profitLoss >= 0 ? 'text-green-600/70' : 'text-red-600/70')}>
-                {amountToWords(Math.abs(profitLoss))}
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Profit Margin */}
-        {saleAmount > 0 && (
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-5">
-              <div className="flex items-center gap-3 mb-2">
-                <div className={cn('flex h-10 w-10 items-center justify-center rounded-xl', profitMarginPercent >= 0 ? 'bg-emerald-50' : 'bg-red-50')}>
-                  <TrendingUp className={cn('h-5 w-5', profitMarginPercent >= 0 ? 'text-emerald-600' : 'text-red-600')} />
-                </div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Profit Margin</p>
-              </div>
-              <p className={cn('text-2xl font-bold', profitMarginPercent >= 0 ? 'text-emerald-700' : 'text-red-700')}>
-                {profitMarginPercent.toFixed(1)}%
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">Sale Amount - Actual Spent</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Pending Payments */}
-        {summary.pendingPayments > 0 && (
-          <Card className="border-0 shadow-sm">
-            <CardContent className="p-5">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50">
-                  <Clock className="h-5 w-5 text-red-600" />
-                </div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Pending Payments</p>
-              </div>
-              <p className="text-2xl font-bold text-red-700">{formatCurrency(summary.pendingPayments)}</p>
-              <p className="text-xs text-red-600/70 italic mt-1">{amountToWords(summary.pendingPayments)}</p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* Budget Progress */}
-      {builderEstimate > 0 && (
-        <Card className="border-0 shadow-md">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Budget Progress</h3>
-              <span className={cn('text-sm font-bold', isOverBudget ? 'text-red-600' : 'text-green-600')}>
-                {budgetUsedPercent}% used
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-sm mb-2">
-              <span className="text-muted-foreground">Builder Budget</span>
-              <span className="font-semibold">
-                {formatCurrency(actualSpent)} / {formatCurrency(builderEstimate)}
-              </span>
-            </div>
-            <div className="h-4 w-full overflow-hidden rounded-full bg-gray-100">
-              <div
-                className={cn('h-full rounded-full transition-all', budgetBarColor)}
-                style={{ width: `${Math.min(budgetUsedPercent, 100)}%` }}
-              />
-            </div>
-            <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
-              <span>Spent: {amountToWords(actualSpent)}</span>
-              <span className={cn(isOverBudget ? 'text-red-600 font-semibold' : 'text-green-600')}>
-                {isOverBudget
-                  ? `Over by ${formatCurrency(Math.abs(budgetRemaining))}`
-                  : `Remaining: ${formatCurrency(budgetRemaining)}`
-                }
-              </span>
-            </div>
+            <p className="text-2xl font-bold text-red-700">{formatCurrency(summary.pendingPayments)}</p>
+            <p className="text-xs text-red-600/70 italic mt-1">{amountToWords(summary.pendingPayments)}</p>
           </CardContent>
         </Card>
       )}

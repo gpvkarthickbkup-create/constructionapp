@@ -32,6 +32,7 @@ interface AuthState {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   loadToken: () => Promise<void>;
+  refreshTenant: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -101,6 +102,21 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
     } catch {
       set({ isAuthenticated: false });
+    }
+  },
+
+  refreshTenant: async () => {
+    try {
+      const token = await getItem('token');
+      if (!token) return;
+      const { data } = await api.get('/auth/me', { headers: { Authorization: `Bearer ${token}` } });
+      const user = data.data;
+      const tenant = data.data?.tenant;
+      set({ user, tenant });
+      await setItem('user_data', JSON.stringify(user));
+      await setItem('tenant_data', JSON.stringify(tenant));
+    } catch {
+      // Silently ignore — don't logout on background refresh failure
     }
   },
 }));
