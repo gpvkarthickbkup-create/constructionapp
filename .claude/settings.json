@@ -87,7 +87,9 @@
       "Bash(curl -s https://datalytics-easy-build.onrender.com/api/admin/tenants/plans/all)",
       "Bash(curl -s -X POST https://datalytics-easy-build.onrender.com/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"admin@datalytics.com\",\"password\":\"Admin@123\"}')",
       "Bash(awk 'NR>=595 && NR<=615' AdminPage.tsx)",
-      "Bash(awk 'NR>=575 && NR<=590' AdminPage.tsx)"
+      "Bash(awk 'NR>=575 && NR<=590' AdminPage.tsx)",
+      "Bash(eas update:*)",
+      "Bash(CI=1 eas update --channel production --message \"Fix back button\" --platform android)"
     ]
   }
 }
