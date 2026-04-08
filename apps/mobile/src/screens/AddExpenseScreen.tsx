@@ -228,16 +228,31 @@ export function AddExpenseScreen({ preselectedSiteId, back, dark }: { preselecte
                 </TouchableOpacity>
               ))}
             </View>
-            <Text style={{ color: C.sub, fontSize: 13, fontWeight: '600', marginBottom: 6 }}>Vendor</Text>
-            {vendors.length > 0 && (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
-                {vendors.map((v: any) => (
-                  <TouchableOpacity key={v.id || v._id} onPress={() => setVendorId(vendorId === (v.id || v._id) ? '' : (v.id || v._id))} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, marginRight: 8, backgroundColor: vendorId === (v.id || v._id) ? C.primary : inputBg, borderWidth: 1, borderColor: vendorId === (v.id || v._id) ? C.primary : border }}>
-                    <Text style={{ color: vendorId === (v.id || v._id) ? '#fff' : txt, fontWeight: '600', fontSize: 13 }}>{v.name}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
+            <Text style={{ color: txt, fontSize: 16, fontWeight: '700', marginBottom: 8 }}>🏪 Select Vendor *</Text>
+            {vendors.length > 0 ? (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                {vendors.map((v: any) => {
+                  const vid = v.id || v._id;
+                  const sel = vendorId === vid;
+                  return (
+                    <TouchableOpacity key={vid} onPress={() => setVendorId(sel ? '' : vid)}
+                      style={{ paddingHorizontal: 16, paddingVertical: 12, borderRadius: 14, backgroundColor: sel ? C.primary : inputBg, borderWidth: 1.5, borderColor: sel ? C.primary : border }}>
+                      <Text style={{ color: sel ? '#fff' : txt, fontWeight: '600', fontSize: 14 }}>{sel ? '✓ ' : ''}{v.name}</Text>
+                      {v.type ? <Text style={{ color: sel ? '#fff' : C.sub, fontSize: 11, marginTop: 2 }}>{v.type.replace('_', ' ')}</Text> : null}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            ) : (
+              <View style={{ backgroundColor: inputBg, padding: 14, borderRadius: 12, marginBottom: 12 }}>
+                <Text style={{ color: C.sub, fontSize: 13 }}>No vendors yet. Add vendors from More → Vendors.</Text>
+              </View>
             )}
+            {vendorId ? (
+              <View style={{ backgroundColor: C.primary + '15', padding: 10, borderRadius: 10, marginBottom: 12 }}>
+                <Text style={{ color: C.primary, fontWeight: '600', fontSize: 13 }}>✓ Vendor: {vendors.find((v: any) => (v.id || v._id) === vendorId)?.name}</Text>
+              </View>
+            ) : null}
             <TextInput placeholder="Bill Number (optional)" value={billNo} onChangeText={setBillNo} style={inpS(dark)} placeholderTextColor={C.sub} />
             <TextInput placeholder="Remarks (optional)" value={remarks} onChangeText={setRemarks} style={inpS(dark)} placeholderTextColor={C.sub} multiline />
 
