@@ -147,6 +147,41 @@ router.put('/plans/:id', async (req: AuthRequest, res: Response, next: NextFunct
   } catch (error) { next(error); }
 });
 
+// Reset password for a user in a tenant
+router.patch('/:id/reset-password', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { userId, newPassword } = req.body;
+    const bcrypt = require('bcryptjs');
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+    await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+    sendSuccess(res, null, 'Password reset successfully');
+  } catch (error) { next(error); }
+});
+
+// Get users for a tenant
+router.get('/:id/users', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const users = await prisma.user.findMany({
+      where: { tenantId: req.params.id, deletedAt: null },
+      select: { id: true, email: true, firstName: true, lastName: true, mobile: true, isActive: true, lastLoginAt: true },
+    });
+    sendSuccess(res, users);
+  } catch (error) { next(error); }
+});
+
+// Update tenant custom pricing / notes
+router.patch('/:id/pricing', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { customPrice, notes } = req.body;
+    // Store custom price in the tenant notes field for now
+    const tenant = await prisma.tenant.update({
+      where: { id: req.params.id },
+      data: { notes: JSON.stringify({ customPrice: customPrice || 0, notes: notes || '' }) },
+    });
+    sendSuccess(res, tenant, 'Pricing updated');
+  } catch (error) { next(error); }
+});
+
 // Lock/unlock modules for a tenant
 router.patch('/:id/modules', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {

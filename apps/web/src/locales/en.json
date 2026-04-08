@@ -119,7 +119,8 @@
     "clients": "Clients",
     "customers": "Customers",
     "lands": "Land & Plots",
-    "bank": "Bank & Cash"
+    "bank": "Bank & Cash",
+    "admin": "Super Admin"
   },
   "dashboard": {
     "title": "Dashboard",

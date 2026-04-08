@@ -49,6 +49,7 @@ interface Tenant {
   mobile: string;
   status: string;
   lockedModules: string;
+  notes: string;
   createdAt: string;
   subscription: Subscription;
   _count: { users: number; sites: number; expenses: number };
@@ -329,6 +330,42 @@ function CompanyDetailInline({
   const [selectedPlan, setSelectedPlan] = useState('');
   const [extendDate, setExtendDate] = useState('');
   const [updatingSubscription, setUpdatingSubscription] = useState(false);
+  // Custom pricing
+  const [customPrice, setCustomPrice] = useState('');
+  const [pricingNotes, setPricingNotes] = useState('');
+  const [savingPrice, setSavingPrice] = useState(false);
+  // Password reset
+  const [tenantUsers, setTenantUsers] = useState<any[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [resettingPw, setResettingPw] = useState(false);
+  const [showUsers, setShowUsers] = useState(false);
+
+  // Load tenant users + pricing on mount
+  useEffect(() => {
+    api.get(`/admin/tenants/${tenant.id}/users`).then(r => setTenantUsers(r.data?.data || [])).catch(() => {});
+    try { const n = JSON.parse(tenant.notes || '{}'); setCustomPrice(n.customPrice || ''); setPricingNotes(n.notes || ''); } catch {}
+  }, [tenant.id]);
+
+  const handleSavePrice = async () => {
+    setSavingPrice(true);
+    try {
+      await api.patch(`/admin/tenants/${tenant.id}/pricing`, { customPrice: parseFloat(customPrice) || 0, notes: pricingNotes });
+      toast.success('Pricing saved');
+    } catch { toast.error('Failed'); }
+    finally { setSavingPrice(false); }
+  };
+
+  const handleResetPassword = async () => {
+    if (!selectedUserId || !newPassword) { toast.error('Select user and enter new password'); return; }
+    setResettingPw(true);
+    try {
+      await api.patch(`/admin/tenants/${tenant.id}/reset-password`, { userId: selectedUserId, newPassword });
+      toast.success('Password reset!');
+      setNewPassword('');
+    } catch { toast.error('Failed'); }
+    finally { setResettingPw(false); }
+  };
 
   const toggleModule = (key: string) => {
     setLocked((prev) =>
@@ -543,6 +580,50 @@ function CompanyDetailInline({
                 )}
                 Save Module Settings
               </button>
+            </div>
+          </div>
+
+          {/* Custom Pricing + Password Reset Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+            {/* Custom Pricing */}
+            <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+              <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">💰 Custom Pricing</h4>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">Monthly Amount (₹)</label>
+                  <input type="number" value={customPrice} onChange={e => setCustomPrice(e.target.value)} placeholder="e.g., 2499" className="w-full h-10 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 text-sm" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">Notes</label>
+                  <input value={pricingNotes} onChange={e => setPricingNotes(e.target.value)} placeholder="e.g., Paid till March 2027" className="w-full h-10 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 text-sm" />
+                </div>
+                <button onClick={handleSavePrice} disabled={savingPrice} className="bg-[#f26f31] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#d4551a] disabled:opacity-50">
+                  {savingPrice ? 'Saving...' : '💾 Save Pricing'}
+                </button>
+              </div>
+            </div>
+
+            {/* Password Reset */}
+            <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+              <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">🔑 Reset User Password</h4>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">Select User</label>
+                  <select value={selectedUserId} onChange={e => setSelectedUserId(e.target.value)} className="w-full h-10 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 text-sm">
+                    <option value="">-- Select User --</option>
+                    {tenantUsers.map((u: any) => (
+                      <option key={u.id} value={u.id}>{u.firstName} {u.lastName} ({u.email})</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">New Password</label>
+                  <input type="text" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Enter new password" className="w-full h-10 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 text-sm" />
+                </div>
+                <button onClick={handleResetPassword} disabled={resettingPw} className="bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-600 disabled:opacity-50">
+                  {resettingPw ? 'Resetting...' : '🔑 Reset Password'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
