@@ -474,8 +474,50 @@ function OverviewTab({
     { label: 'Total Expenses', value: stats.totalExpenses, icon: Receipt, color: '#ec4899' },
   ];
 
+  const handleFullBackup = async () => {
+    try {
+      const res = await api.get('/admin/tenants/backup/full');
+      const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `full-database-backup-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Full backup downloaded!');
+    } catch { toast.error('Backup failed'); }
+  };
+
+  const handleRestore = async () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = async (e: any) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (!confirm('⚠️ This will restore data from the backup file. Existing data with same IDs will be overwritten. Continue?')) return;
+      try {
+        const text = await file.text();
+        const backup = JSON.parse(text);
+        const res = await api.post('/admin/tenants/backup/restore', backup);
+        toast.success(`Restored: ${JSON.stringify(res.data?.data?.restored)}`);
+      } catch (err: any) { toast.error(err?.message || 'Restore failed'); }
+    };
+    input.click();
+  };
+
   return (
     <div className="space-y-8">
+      {/* Backup & Restore */}
+      <div className="flex gap-3">
+        <button onClick={handleFullBackup} className="flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700">
+          <Download className="h-4 w-4" /> Full Database Backup
+        </button>
+        <button onClick={handleRestore} className="flex items-center gap-2 bg-amber-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-amber-700">
+          <Database className="h-4 w-4" /> Restore from Backup
+        </button>
+      </div>
+
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map((c) => (

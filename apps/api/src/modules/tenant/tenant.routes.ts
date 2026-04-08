@@ -43,6 +43,145 @@ router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
   } catch (error) { next(error); }
 });
 
+// Full database backup (ALL companies)
+router.get('/backup/full', async (_req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const [tenants, users, sites, expenses, vendors, customers, lands, categories, plans, subscriptions] = await Promise.all([
+      prisma.tenant.findMany(),
+      prisma.user.findMany(),
+      prisma.site.findMany({ include: { siteImages: true } }),
+      prisma.expense.findMany({ include: { attachments: true, payments: true } }),
+      prisma.vendor.findMany(),
+      prisma.customer.findMany({ include: { collections: true } }),
+      prisma.land.findMany({ include: { plots: { include: { payments: true } }, approvals: true, developmentCosts: true } }),
+      prisma.expenseCategory.findMany(),
+      prisma.subscriptionPlan.findMany(),
+      prisma.subscription.findMany(),
+    ]);
+
+    const backup = {
+      exportDate: new Date().toISOString(),
+      version: '1.0.0',
+      type: 'full_database_backup',
+      counts: { tenants: tenants.length, users: users.length, sites: sites.length, expenses: expenses.length, vendors: vendors.length, customers: customers.length, lands: lands.length },
+      data: { tenants, users, sites, expenses, vendors, customers, lands, categories, plans, subscriptions },
+    };
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="full-backup-${new Date().toISOString().split('T')[0]}.json"`);
+    res.json(backup);
+  } catch (error) { next(error); }
+});
+
+// Restore database from backup
+router.post('/backup/restore', async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const backup = req.body;
+    if (!backup?.data?.tenants) {
+      return res.status(400).json({ success: false, message: 'Invalid backup file' });
+    }
+
+    const d = backup.data;
+    let restored = { tenants: 0, users: 0, sites: 0, expenses: 0, vendors: 0, customers: 0, lands: 0 };
+
+    // Restore plans first
+    if (d.plans?.length) {
+      for (const plan of d.plans) {
+        await prisma.subscriptionPlan.upsert({ where: { id: plan.id }, update: plan, create: plan }).catch(() => {});
+      }
+    }
+
+    // Restore tenants
+    for (const t of d.tenants || []) {
+      const { subscription, users: _u, sites: _s, vendors: _v, expenses: _e, customers: _c, lands: _l, expenseCategories: _ec, notifications: _n, auditLogs: _a, activityLogs: _al, appSettings: _as, roles: _r, bankAccounts: _b, ...tenantData } = t;
+      await prisma.tenant.upsert({ where: { id: t.id }, update: tenantData, create: tenantData }).catch(() => {});
+      restored.tenants++;
+    }
+
+    // Restore subscriptions
+    for (const s of d.subscriptions || []) {
+      await prisma.subscription.upsert({ where: { id: s.id }, update: s, create: s }).catch(() => {});
+    }
+
+    // Restore users (skip password — security)
+    for (const u of d.users || []) {
+      const { tenant: _t, userRoles: _ur, siteAssignments: _sa, createdExpenses: _ce, updatedExpenses: _ue, auditLogs: _al, activityLogs: _acl, refreshTokens: _rt, ...userData } = u;
+      await prisma.user.upsert({ where: { id: u.id }, update: userData, create: userData }).catch(() => {});
+      restored.users++;
+    }
+
+    // Restore categories
+    for (const c of d.categories || []) {
+      const { tenant: _t, subcategories: _sc, expenses: _e, ...catData } = c;
+      await prisma.expenseCategory.upsert({ where: { id: c.id }, update: catData, create: catData }).catch(() => {});
+    }
+
+    // Restore vendors
+    for (const v of d.vendors || []) {
+      const { tenant: _t, expenses: _e, ...vendorData } = v;
+      await prisma.vendor.upsert({ where: { id: v.id }, update: vendorData, create: vendorData }).catch(() => {});
+      restored.vendors++;
+    }
+
+    // Restore customers
+    for (const c of d.customers || []) {
+      const { tenant: _t, collections, ...custData } = c;
+      await prisma.customer.upsert({ where: { id: c.id }, update: custData, create: custData }).catch(() => {});
+      for (const col of collections || []) {
+        await prisma.customerCollection.upsert({ where: { id: col.id }, update: col, create: col }).catch(() => {});
+      }
+      restored.customers++;
+    }
+
+    // Restore sites
+    for (const s of d.sites || []) {
+      const { tenant: _t, expenses: _e, siteImages, siteAssignments: _sa, ...siteData } = s;
+      await prisma.site.upsert({ where: { id: s.id }, update: siteData, create: siteData }).catch(() => {});
+      for (const img of siteImages || []) {
+        await prisma.siteImage.upsert({ where: { id: img.id }, update: img, create: img }).catch(() => {});
+      }
+      restored.sites++;
+    }
+
+    // Restore expenses
+    for (const e of d.expenses || []) {
+      const { tenant: _t, site: _s, vendor: _v, category: _c, subcategory: _sc, creator: _cr, updater: _up, attachments, payments, ...expData } = e;
+      await prisma.expense.upsert({ where: { id: e.id }, update: expData, create: expData }).catch(() => {});
+      for (const att of attachments || []) {
+        await prisma.expenseAttachment.upsert({ where: { id: att.id }, update: att, create: att }).catch(() => {});
+      }
+      for (const pay of payments || []) {
+        await prisma.payment.upsert({ where: { id: pay.id }, update: pay, create: pay }).catch(() => {});
+      }
+      restored.expenses++;
+    }
+
+    // Restore lands
+    for (const l of d.lands || []) {
+      const { tenant: _t, plots, approvals, developmentCosts, ...landData } = l;
+      await prisma.land.upsert({ where: { id: l.id }, update: landData, create: landData }).catch(() => {});
+      for (const p of plots || []) {
+        const { land: _la, payments: plotPayments, ...plotData } = p;
+        await prisma.plot.upsert({ where: { id: p.id }, update: plotData, create: plotData }).catch(() => {});
+        for (const pp of plotPayments || []) {
+          await prisma.plotPayment.upsert({ where: { id: pp.id }, update: pp, create: pp }).catch(() => {});
+        }
+      }
+      for (const a of approvals || []) {
+        const { land: _la, ...appData } = a;
+        await prisma.landApproval.upsert({ where: { id: a.id }, update: appData, create: appData }).catch(() => {});
+      }
+      for (const dc of developmentCosts || []) {
+        const { land: _la, ...dcData } = dc;
+        await prisma.landDevelopmentCost.upsert({ where: { id: dc.id }, update: dcData, create: dcData }).catch(() => {});
+      }
+      restored.lands++;
+    }
+
+    sendSuccess(res, { restored, message: 'Database restored successfully' });
+  } catch (error) { next(error); }
+});
+
 // Get available modules list
 router.get('/modules/list', async (_req: AuthRequest, res: Response) => {
   sendSuccess(res, {
