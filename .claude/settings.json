@@ -90,7 +90,14 @@
       "Bash(awk 'NR>=575 && NR<=590' AdminPage.tsx)",
       "Bash(eas update:*)",
       "Bash(CI=1 eas update --channel production --message \"Fix back button\" --platform android)",
-      "Bash(CI=1 eas update --channel production --message \"Hide navigation bar\" --platform android)"
+      "Bash(CI=1 eas update --channel production --message \"Hide navigation bar\" --platform android)",
+      "Bash(CI=1 eas update --channel production --message \"Persistent login + remove demo creds\" --platform android)",
+      "Bash(curl -s -X POST https://datalytics-easy-build.vercel.app/api/sites -H \"Content-Type: application/json\" -d '{}')",
+      "Bash(curl -s -X POST https://datalytics-easy-build.onrender.com/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"admin@hitechconstructions.com\",\"password\":\"test\"}')",
+      "Bash(curl -s https://datalytics-easy-build.onrender.com/api/auth/me -H 'Authorization: Bearer __TRACKED_VAR__')",
+      "Bash(curl -s -X POST https://datalytics-easy-build.onrender.com/api/auth/register -H \"Content-Type: application/json\" -d '{\"companyName\":\"Lock Test Co\",\"ownerName\":\"Test\",\"email\":\"locktest@test.com\",\"mobile\":\"9999999998\",\"password\":\"Test@123\"}')",
+      "Bash(curl -s https://datalytics-easy-build.onrender.com/api/admin/tenants -H 'Authorization: Bearer __TRACKED_VAR__')",
+      "Bash(curl -s -X POST https://datalytics-easy-build.onrender.com/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"locktest@test.com\",\"password\":\"Test@123\"}')"
     ]
   }
 }
