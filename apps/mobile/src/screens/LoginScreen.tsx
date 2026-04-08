@@ -60,8 +60,7 @@ export function LoginScreen() {
         </TouchableOpacity>
 
         <View style={styles.divider} />
-        <Text style={styles.demo}>Demo: Gpvk@datalytics.com</Text>
-        <Text style={styles.demo}>Password: Datalytics@123</Text>
+        <Text style={styles.demo}>Powered by Datalytics AI Global</Text>
       </View>
     </KeyboardAvoidingView>
   );

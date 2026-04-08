@@ -45,6 +45,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       const result = data.data;
       await setItem('token', result.accessToken);
       await setItem('refreshToken', result.refreshToken);
+      await setItem('user_data', JSON.stringify(result.user));
+      await setItem('tenant_data', JSON.stringify(result.tenant));
       set({ isAuthenticated: true, user: result.user, tenant: result.tenant });
     } catch (err: any) {
       throw new Error(err?.response?.data?.message || err?.message || 'Cannot connect to server');
@@ -54,6 +56,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: async () => {
     await removeItem('token');
     await removeItem('refreshToken');
+    await removeItem('user_data');
+    await removeItem('tenant_data');
     set({ isAuthenticated: false, user: null, tenant: null });
   },
 
@@ -61,10 +65,41 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const token = await getItem('token');
       if (!token) { set({ isAuthenticated: false }); return; }
-      const { data } = await api.get('/auth/me', { headers: { Authorization: `Bearer ${token}` } });
-      set({ isAuthenticated: true, user: data.data, tenant: data.data?.tenant });
+
+      // Restore saved user data immediately (no API call needed)
+      const savedUser = await getItem('user_data');
+      const savedTenant = await getItem('tenant_data');
+      if (savedUser) {
+        set({
+          isAuthenticated: true,
+          user: JSON.parse(savedUser),
+          tenant: savedTenant ? JSON.parse(savedTenant) : null,
+        });
+      }
+
+      // Then refresh from API in background (don't block)
+      api.get('/auth/me', { headers: { Authorization: `Bearer ${token}` } })
+        .then(({ data }) => {
+          const user = data.data;
+          const tenant = data.data?.tenant;
+          set({ isAuthenticated: true, user, tenant });
+          setItem('user_data', JSON.stringify(user));
+          setItem('tenant_data', JSON.stringify(tenant));
+        })
+        .catch(() => {
+          // API unreachable — keep logged in with cached data
+          // Only logout if no cached data exists
+          if (!savedUser) {
+            removeItem('token');
+            set({ isAuthenticated: false });
+          }
+        });
+
+      // If no cached data and no token validation, still set auth true
+      if (!savedUser && token) {
+        set({ isAuthenticated: true });
+      }
     } catch {
-      await removeItem('token');
       set({ isAuthenticated: false });
     }
   },
