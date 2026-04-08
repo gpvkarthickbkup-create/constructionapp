@@ -15,6 +15,7 @@ export function AddExpenseScreen({ preselectedSiteId, back, dark }: { preselecte
   const [siteId, setSiteId] = useState(preselectedSiteId || '');
   const [expType, setExpType] = useState('');
   const [itemName, setItemName] = useState('');
+  const [itemSearch, setItemSearch] = useState('');
   const [categories, setCategories] = useState<any[]>([]);
   const [qty, setQty] = useState('1');
   const [unit, setUnit] = useState('nos');
@@ -145,20 +146,48 @@ export function AddExpenseScreen({ preselectedSiteId, back, dark }: { preselecte
           </View>
         )}
 
-        {/* Step 3: Item */}
+        {/* Step 3: Item — Searchable */}
         {step === 3 && (
           <View>
-            <Text style={{ color: txt, fontSize: 18, fontWeight: '700', marginBottom: 12 }}>Item</Text>
-            {categories.length > 0 && (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
-                {categories.map((cat: any, i: number) => (
-                  <TouchableOpacity key={i} onPress={() => setItemName(cat.name || cat.itemName || '')} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, marginRight: 8, backgroundColor: itemName === (cat.name || cat.itemName) ? C.primary : inputBg, borderWidth: 1, borderColor: itemName === (cat.name || cat.itemName) ? C.primary : border }}>
-                    <Text style={{ color: itemName === (cat.name || cat.itemName) ? '#fff' : txt, fontWeight: '600', fontSize: 13 }}>{cat.name || cat.itemName}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
+            <Text style={{ color: txt, fontSize: 18, fontWeight: '700', marginBottom: 12 }}>Select Item</Text>
+            <TextInput
+              placeholder="🔍 Search category..."
+              value={itemSearch}
+              onChangeText={setItemSearch}
+              style={[inpS(dark), { marginBottom: 12 }]}
+              placeholderTextColor={C.sub}
+            />
+            {categories.length > 0 ? (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {categories
+                  .filter((cat: any) => {
+                    if (!itemSearch) return true;
+                    const name = (cat.name || cat.itemName || '').toLowerCase();
+                    const nameTa = (cat.nameTa || '').toLowerCase();
+                    return name.includes(itemSearch.toLowerCase()) || nameTa.includes(itemSearch.toLowerCase());
+                  })
+                  .map((cat: any, i: number) => {
+                    const catName = cat.name || cat.itemName || '';
+                    const selected = itemName === catName;
+                    return (
+                      <TouchableOpacity key={i} onPress={() => { setItemName(catName); setItemSearch(''); }}
+                        style={{ paddingHorizontal: 16, paddingVertical: 12, borderRadius: 14, backgroundColor: selected ? C.primary : inputBg, borderWidth: 1.5, borderColor: selected ? C.primary : border }}>
+                        <Text style={{ color: selected ? '#fff' : txt, fontWeight: '600', fontSize: 14 }}>
+                          {selected ? '✓ ' : ''}{catName}
+                        </Text>
+                        {cat.nameTa ? <Text style={{ color: selected ? '#fff' : C.sub, fontSize: 11, marginTop: 2 }}>{cat.nameTa}</Text> : null}
+                      </TouchableOpacity>
+                    );
+                  })}
+              </View>
+            ) : (
+              <Text style={{ color: C.sub, textAlign: 'center', marginTop: 20 }}>No categories found for this type</Text>
             )}
-            <TextInput placeholder="Item name" value={itemName} onChangeText={setItemName} style={inpS(dark)} placeholderTextColor={C.sub} />
+            {itemName ? (
+              <View style={{ backgroundColor: C.primary + '15', padding: 12, borderRadius: 12, marginTop: 12 }}>
+                <Text style={{ color: C.primary, fontWeight: '700' }}>Selected: {itemName}</Text>
+              </View>
+            ) : null}
           </View>
         )}
 

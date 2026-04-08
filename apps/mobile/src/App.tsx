@@ -87,14 +87,16 @@ function MainApp({ dark, toggleDark, lang, toggleLang }: { dark: boolean; toggle
     if (tab === 'history') return <ExpensesScreen dark={dark} />;
     if (tab === 'more') {
       if (moreView) return renderMoreView();
-      // More menu
-      const items = [
+      // More menu — filter out locked modules
+      const locked = (tenant?.lockedModules || '').split(',').filter(Boolean);
+      const allItems = [
         { label: 'Vendors', icon: '🛠️', key: 'vendors' },
         { label: 'Clients', icon: '👥', key: 'clients' },
         { label: 'Lands', icon: '🏘️', key: 'lands' },
         { label: 'Reports', icon: '📊', key: 'reports' },
         { label: 'Settings', icon: '⚙️', key: 'settings' },
       ];
+      const items = allItems.filter(it => !locked.includes(it.key));
       return (
         <View style={{ flex: 1, backgroundColor: bg, padding: 20 }}>
           <Text style={{ fontSize: 28, fontWeight: '800', color: txt, marginBottom: 20 }}>More</Text>
