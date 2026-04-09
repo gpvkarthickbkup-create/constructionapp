@@ -73,11 +73,10 @@ function MainApp({ dark, toggleDark, lang, toggleLang }: { dark: boolean; toggle
   };
 
   const renderMoreView = () => {
+    if (moreView === 'history') return <ExpensesScreen dark={dark} />;
     if (moreView === 'vendors') return <VendorsScreen nav={nav} dark={dark} />;
     if (moreView === 'clients') return <ClientsScreen nav={nav} dark={dark} />;
-    // Lands removed from mobile
     if (moreView === 'reports') return <ReportsScreen dark={dark} />;
-    if (moreView === 'notes') return <NotesScreen nav={nav} dark={dark} />;
     if (moreView === 'settings') return <SettingsScreen dark={dark} toggleDark={toggleDark} lang={lang} toggleLang={toggleLang} />;
     return null;
   };
@@ -85,15 +84,15 @@ function MainApp({ dark, toggleDark, lang, toggleLang }: { dark: boolean; toggle
   const renderTab = () => {
     if (tab === 'home') return <HomeScreen nav={nav} onSwitchTab={setTab} dark={dark} tenant={tenant} />;
     if (tab === 'sites') return <SitesScreen nav={nav} dark={dark} />;
-    if (tab === 'history') return <ExpensesScreen dark={dark} />;
+    if (tab === 'notes') return <NotesScreen nav={nav} dark={dark} />;
     if (tab === 'more') {
       if (moreView) return renderMoreView();
       // More menu — filter out locked modules
       const locked = (tenant?.lockedModules || '').split(',').filter(Boolean);
       const allItems = [
+        { label: 'History', icon: '📋', key: 'history' },
         { label: 'Vendors', icon: '🛠️', key: 'vendors' },
         { label: 'Clients', icon: '👥', key: 'clients' },
-        { label: 'Notes', icon: '📒', key: 'notes' },
         { label: 'Reports', icon: '📊', key: 'reports' },
         { label: 'Settings', icon: '⚙️', key: 'settings' },
       ];
@@ -119,7 +118,7 @@ function MainApp({ dark, toggleDark, lang, toggleLang }: { dark: boolean; toggle
     { key: 'home', label: 'Home', icon: '🏠' },
     { key: 'sites', label: 'Sites', icon: '🏗️' },
     { key: 'add', label: '', icon: '+' },
-    { key: 'history', label: 'History', icon: '📋' },
+    { key: 'notes', label: 'Notes', icon: '📒' },
     { key: 'more', label: 'More', icon: '⋯' },
   ];
 
