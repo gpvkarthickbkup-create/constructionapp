@@ -20,6 +20,7 @@ import userRoutes from './modules/user/user.routes';
 import uploadRoutes from './modules/upload/upload.routes';
 import customerRoutes from './modules/customer/customer.routes';
 import landRoutes from './modules/land/land.routes';
+import notesRoutes from './modules/notes/notes.routes';
 // import bankRoutes from './modules/bank/bank.routes'; // Removed
 
 const app = express();
@@ -64,6 +65,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/lands', landRoutes);
+app.use('/api/notes', notesRoutes);
 // app.use('/api/bank', bankRoutes); // Removed
 
 // Health check

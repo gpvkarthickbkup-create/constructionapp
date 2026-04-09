@@ -14,6 +14,7 @@ import { VendorsScreen } from './screens/VendorsScreen';
 import { VendorDetailScreen } from './screens/VendorDetailScreen';
 import { ClientsScreen } from './screens/ClientsScreen';
 import { ClientDetailScreen } from './screens/ClientDetailScreen';
+import { NotesScreen } from './screens/NotesScreen';
 // Lands removed from mobile
 import { ReportsScreen } from './screens/ReportsScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
@@ -76,6 +77,7 @@ function MainApp({ dark, toggleDark, lang, toggleLang }: { dark: boolean; toggle
     if (moreView === 'clients') return <ClientsScreen nav={nav} dark={dark} />;
     // Lands removed from mobile
     if (moreView === 'reports') return <ReportsScreen dark={dark} />;
+    if (moreView === 'notes') return <NotesScreen nav={nav} dark={dark} />;
     if (moreView === 'settings') return <SettingsScreen dark={dark} toggleDark={toggleDark} lang={lang} toggleLang={toggleLang} />;
     return null;
   };
@@ -91,6 +93,7 @@ function MainApp({ dark, toggleDark, lang, toggleLang }: { dark: boolean; toggle
       const allItems = [
         { label: 'Vendors', icon: '🛠️', key: 'vendors' },
         { label: 'Clients', icon: '👥', key: 'clients' },
+        { label: 'Notes', icon: '📒', key: 'notes' },
         { label: 'Reports', icon: '📊', key: 'reports' },
         { label: 'Settings', icon: '⚙️', key: 'settings' },
       ];

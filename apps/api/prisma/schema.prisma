@@ -47,6 +47,7 @@ model Tenant {
   customers     Customer[]
   bankAccounts  BankAccount[]
   lands         Land[]
+  quickNotes    QuickNote[]
 
   @@index([status])
   @@index([email])
@@ -705,6 +706,34 @@ model CustomerCollection {
 
   @@index([tenantId])
   @@index([customerId])
+}
+
+// ============================================================
+// SETTINGS MODELS
+// ============================================================
+
+// ============================================================
+// QUICK NOTES (Field Notepad)
+// ============================================================
+
+model QuickNote {
+  id          String   @id @default(uuid())
+  tenantId    String
+  userId      String
+  title       String?
+  content     String
+  siteId      String?  // optional — link to a site
+  category    String   @default("general") // general | expense | material | labor | payment | reminder
+  isConverted Boolean  @default(false) // true when note is converted to expense
+  convertedId String?  // expense ID if converted
+  isPinned    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, userId])
 }
 
 // ============================================================
