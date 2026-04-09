@@ -67,18 +67,18 @@ export const useAuthStore = create<AuthState>((set) => ({
       const token = await getItem('token');
       if (!token) { set({ isAuthenticated: false }); return; }
 
-      // Restore saved user data immediately (no API call needed)
+      // Restore saved user data IMMEDIATELY — no waiting for API
       const savedUser = await getItem('user_data');
       const savedTenant = await getItem('tenant_data');
-      if (savedUser) {
-        set({
-          isAuthenticated: true,
-          user: JSON.parse(savedUser),
-          tenant: savedTenant ? JSON.parse(savedTenant) : null,
-        });
-      }
 
-      // Then refresh from API in background (don't block)
+      // Set authenticated instantly with cached data
+      set({
+        isAuthenticated: true,
+        user: savedUser ? JSON.parse(savedUser) : null,
+        tenant: savedTenant ? JSON.parse(savedTenant) : null,
+      });
+
+      // Refresh from API silently in background — don't block the app
       api.get('/auth/me', { headers: { Authorization: `Bearer ${token}` } })
         .then(({ data }) => {
           const user = data.data;
@@ -88,18 +88,8 @@ export const useAuthStore = create<AuthState>((set) => ({
           setItem('tenant_data', JSON.stringify(tenant));
         })
         .catch(() => {
-          // API unreachable — keep logged in with cached data
-          // Only logout if no cached data exists
-          if (!savedUser) {
-            removeItem('token');
-            set({ isAuthenticated: false });
-          }
+          // API unreachable — stay logged in with cached data
         });
-
-      // If no cached data and no token validation, still set auth true
-      if (!savedUser && token) {
-        set({ isAuthenticated: true });
-      }
     } catch {
       set({ isAuthenticated: false });
     }

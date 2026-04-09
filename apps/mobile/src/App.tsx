@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, Platform, Image, BackHandler, Alert, AppState } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as NavigationBar from 'expo-navigation-bar';
+import * as SecureStore from 'expo-secure-store';
 import { useAuthStore } from './store/authStore';
 import { LoginScreen } from './screens/LoginScreen';
 import { HomeScreen } from './screens/HomeScreen';
@@ -179,7 +180,39 @@ export default function App() {
   const loadToken = useAuthStore(s => s.loadToken);
   const refreshTenant = useAuthStore(s => s.refreshTenant);
 
-  useEffect(() => { loadToken().finally(() => setReady(true)); }, []);
+  // Load saved language + dark mode preference
+  useEffect(() => {
+    (async () => {
+      try {
+        const savedLang = await SecureStore.getItemAsync('app_lang');
+        if (savedLang === 'ta') setLang('ta');
+        const savedDark = await SecureStore.getItemAsync('app_dark');
+        if (savedDark === 'true') setDark(true);
+      } catch {}
+    })();
+  }, []);
+
+  // Save language when changed
+  const toggleLang = () => {
+    const newLang = lang === 'en' ? 'ta' : 'en';
+    setLang(newLang);
+    SecureStore.setItemAsync('app_lang', newLang).catch(() => {});
+  };
+
+  // Save dark mode when changed
+  const toggleDark = () => {
+    const newDark = !dark;
+    setDark(newDark);
+    SecureStore.setItemAsync('app_dark', String(newDark)).catch(() => {});
+  };
+
+  // Load token — show app immediately with cached data, don't wait for API
+  useEffect(() => {
+    (async () => {
+      await loadToken();
+      setReady(true);
+    })();
+  }, []);
 
   // Periodically refresh tenant data (every 2 minutes) to pick up lockedModules changes
   // Also refresh when app comes to foreground
@@ -218,9 +251,9 @@ export default function App() {
   return (
     <MainApp
       dark={dark}
-      toggleDark={() => setDark(d => !d)}
+      toggleDark={toggleDark}
       lang={lang}
-      toggleLang={() => setLang(l => l === 'en' ? 'ta' : 'en')}
+      toggleLang={toggleLang}
     />
   );
 }
